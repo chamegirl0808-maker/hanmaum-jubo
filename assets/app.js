@@ -75,7 +75,9 @@
     document.querySelector("#toolbar select").addEventListener("change", function () {
       location.search = "?week=" + encodeURIComponent(this.value);
     });
-    document.getElementById("print-btn").addEventListener("click", function () { window.print(); });
+    document.getElementById("print-btn").addEventListener("click", function () {
+      location.href = "print.html?week=" + encodeURIComponent(week);
+    });
   }
 
   function render(C, J, week) {
