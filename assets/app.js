@@ -1,92 +1,285 @@
 (function () {
   var q = new URLSearchParams(location.search);
-  var week = q.get("week") || window.JUBO_CURRENT;
+  var requested = q.get("week");
+  var week = requested || window.JUBO_CURRENT;
+  renderChrome(week);
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(week || "")) {
+    document.getElementById("jubo").innerHTML = '<p class="err">주보 날짜를 찾을 수 없습니다.</p>';
+    return;
+  }
+
   var s = document.createElement("script");
   s.src = "data/" + week + ".js";
   s.onload = function () { render(window.CHURCH, window.JUBO, week); };
-  s.onerror = function () { document.getElementById("jubo").innerHTML = '<p class="err">data/' + week + '.js 파일을 찾을 수 없습니다.</p>'; };
+  s.onerror = function () {
+    document.getElementById("jubo").innerHTML = '<p class="err">' + week + " 주보 파일을 찾을 수 없습니다.</p>";
+  };
   document.head.appendChild(s);
 
-  function esc(t) { return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
-  // [설교 제목] 같은 미입력 자리표시를 강조 (단, "[ 새 가족 환영 ]"처럼 띄어쓴 대괄호는 본문으로 취급)
-  function t(x) { return esc(x).replace(/\[([^\s\]][^\]]*)\]/g, '<mark class="ph">[$1]</mark>').replace(/\n/g, "<br>"); }
+  function esc(t) {
+    return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+    });
+  }
+  // [설교 제목] 같은 미입력 자리표시를 강조한다.
+  // "[ 새 가족 환영 ]"처럼 대괄호 안을 띄어 쓴 경우는 본문으로 둔다.
+  function t(x) {
+    return esc(x).replace(/\[([^\s\]][^\]]*)\]/g, '<mark class="ph">[$1]</mark>').replace(/\n/g, "<br>");
+  }
+  function blank(x) { return String(x == null ? "" : x).trim() === ""; }
+
+  function parseDate(s) {
+    var p = String(s || "").split(".");
+    if (p.length < 3) return null;
+    var y = Number(p[0]), m = Number(p[1]), d = Number(p[2]);
+    if (!y || !m || !d) return null;
+    var dt = new Date(y, m - 1, d);
+    if (dt.getFullYear() !== y || dt.getMonth() !== m - 1 || dt.getDate() !== d) return null;
+    return { y: y, m: m, d: d, dow: "일월화수목금토"[dt.getDay()] };
+  }
+
+  function findName(order, name) {
+    var list = order || [];
+    for (var i = 0; i < list.length; i++) if (list[i].name === name) return list[i];
+    return null;
+  }
+  function findSection(order, title) {
+    var list = order || [];
+    for (var i = 0; i < list.length; i++) if (list[i].section === title) return list[i];
+    return null;
+  }
+
+  function isThisSunday(dayCell, J) {
+    var p = parseDate(J.date);
+    if (!p) return false;
+    var cell = String(dayCell == null ? "" : dayCell).trim();
+    if (!cell) return false;
+    if (cell.indexOf(".") !== -1) {
+      var md = cell.split(".");
+      return Number(md[0]) === p.m && Number(md[1]) === p.d;
+    }
+    return cell === String(p.d) && Number(J.month) === p.m;
+  }
+
+  function renderChrome(week) {
+    var weeks = window.JUBO_WEEKS || [week];
+    var church = window.CHURCH || {};
+    var opts = weeks.map(function (w) {
+      return '<option value="' + esc(w) + '"' + (w === week ? " selected" : "") + ">" + esc(w) + "</option>";
+    }).join("");
+    document.getElementById("toolbar").innerHTML =
+      '<a class="brand" href="#cover"><img src="' + esc(church.logo || "assets/logo.png") + '" alt="" width="36" height="36"><span>' + esc(church.name || "주보") + "</span></a>" +
+      '<div class="tools"><label class="week"><span class="sr">주차</span><select aria-label="주보 주차">' + opts + "</select></label>" +
+      '<button type="button" id="print-btn" aria-label="인쇄 / PDF"><span class="long">인쇄 / PDF</span><span class="short">인쇄</span></button></div>';
+    document.querySelector("#toolbar select").addEventListener("change", function () {
+      location.search = "?week=" + encodeURIComponent(this.value);
+    });
+    document.getElementById("print-btn").addEventListener("click", function () { window.print(); });
+  }
 
   function render(C, J, week) {
     document.title = C.name + " 주보 · " + J.date;
-    var bar = '<span class="brand">' + C.name + ' 주보</span><select onchange="location.search=\'?week=\'+this.value">' +
-      (window.JUBO_WEEKS || [week]).map(function (w) { return '<option' + (w === week ? " selected" : "") + ">" + w + "</option>"; }).join("") +
-      '</select><button onclick="window.print()">인쇄 / PDF</button>';
-    document.getElementById("toolbar").innerHTML = bar;
+    var sermon = findName(J.order, "설교");
+    var reading = findName(J.order, "성경봉독");
+    var word = findSection(J.order, "은혜의 말씀");
+    var date = parseDate(J.date);
+    var dow = date ? (date.dow === "일" ? "주일" : date.dow + "요일") : "";
+    var mm = date ? (date.m < 10 ? "0" : "") + date.m : "";
+    var dd = date ? (date.d < 10 ? "0" : "") + date.d : "";
 
-    var orn = '<div class="orn"><span></span><i>✦</i><span></span></div>';
+    var nav = [
+      ["cover", "이번 주"],
+      ["order", "예배"],
+      ["sermon", "말씀"],
+      ["news", "소식"],
+      ["prayer", "기도"],
+      ["servers", "섬김"],
+      ["welcome", "새가족"],
+      ["offering", "헌금"],
+      ["guide", "안내"],
+      ["visit", "오시는 길"],
+      ["contact", "연락처"]
+    ];
+    document.getElementById("snav").innerHTML = nav.map(function (n, i) {
+      return '<a href="#' + n[0] + '"' + (i === 0 ? ' aria-current="true"' : "") + ">" + n[1] + "</a>";
+    }).join("");
 
-    // ---------- 1. 표지 ----------
-    var p1 = '<section class="page cover">' +
-      '<div class="frame">' +
-      '<div class="cover-top"><span>' + t(J.date) + '</span><span>' + t(J.issue) + '</span></div>' +
-      '<h1 class="church">' + C.name.split("").join("<i></i>") + '</h1>' +
-      '<p class="slogan">' + t(C.slogan) + '</p>' + orn +
-      '<img class="logo" src="' + C.logo + '" alt="' + C.name + ' 로고">' +
-      '<div class="motto"><span class="motto-label">표 어</span><div>' +
-      C.motto.map(function (m) { return "<p>" + esc(m[0]) + "<em>" + esc(m[1]) + "</em>" + esc(m[2]) + "</p>"; }).join("") + '</div></div>' +
-      '<div class="pastors">' + C.pastors.map(function (p) { return "<span><small>" + p[0] + "</small>" + p[1].split("").join(" ") + "</span>"; }).join("") + '</div>' +
-      '<footer class="addr"><p>' + C.address.join("<br>") + '</p><p class="contact">Tel. ' + C.tel + ' &nbsp;·&nbsp; ' + C.email + '</p></footer>' +
-      '</div></section>';
+    var hero =
+      '<section class="hero" id="cover">' +
+      '<div class="hero-id"><img class="logo" src="' + esc(C.logo) + '" alt="" width="48" height="48">' +
+      '<div><p class="church">' + esc(C.name) + "</p><p class=\"slogan\">" + t(C.slogan) + "</p></div></div>" +
+      '<p class="issue-line"><span>' + (dow || "주일") + "</span><span>" + t(J.issue) + "</span></p>" +
+      (date
+        ? '<p class="when">' + date.y + "년 " + date.m + "월 " + date.d + "일</p>" +
+          '<p class="bignum" aria-hidden="true">' + mm + '<i>.</i>' + dd + "</p>"
+        : '<p class="when">' + t(J.date) + "</p>") +
+      '<div class="word">' +
+      '<p class="kicker">오늘의 말씀</p>' +
+      '<h1 class="sermon-title">' + (sermon ? t(sermon.mid) : t(J.date)) + "</h1>" +
+      (reading ? '<p class="scripture">' + t(reading.mid) + "</p>" : "") +
+      '<ul class="meta">' +
+      "<li>" + t(J.service && J.service.time) + "</li>" +
+      "<li>" + t(J.service && J.service.leader) + "</li>" +
+      (sermon && sermon.by ? "<li>설교 " + t(sermon.by) + "</li>" : "") +
+      "</ul></div>" +
+      '<div class="motto"><p class="kicker">표어</p>' +
+      (C.motto || []).map(function (m) {
+        return "<p>" + esc(m[0]) + "<em>" + esc(m[1]) + "</em>" + esc(m[2]) + "</p>";
+      }).join("") +
+      "</div></section>";
 
-    // ---------- 2. 교회 안내 ----------
-    var p2 = '<section class="page">' + head(C.name + "는") +
-      '<ol class="vision">' + C.vision.map(function (v) { return '<li><h3>' + v.title + ' <span class="verse">' + v.verse + '</span></h3><p>' + v.desc + '</p></li>'; }).join("") + '</ol>' +
-      '<table class="weekday"><thead><tr>' + C.weekday.map(function (w) { return "<th>" + w.name + "</th>"; }).join("") + '</tr></thead><tbody><tr>' +
-      C.weekday.map(function (w) { return "<td class='tm'>" + w.time + "</td>"; }).join("") + '</tr><tr>' +
-      C.weekday.map(function (w) { return "<td>인도 : " + w.leader + "</td>"; }).join("") + '</tr></tbody></table>' +
-      '<div class="two"><div class="svc"><h3 class="box-title">예배시간 안내</h3><table><thead><tr><th>구 분</th><th>시 간</th></tr></thead><tbody>' +
-      C.services.map(function (s) { return "<tr><td>" + s[0] + "</td><td>" + s[1] + "</td></tr>"; }).join("") + '</tbody></table></div>' +
-      '<div class="map"><h3 class="box-title">교회 찾아오시는 길</h3>' + MAP + '</div></div>' +
-      '<p class="invite">' + C.invitation + '</p></section>';
+    var order =
+      '<section class="block" id="order"><header class="sh"><span>01</span><h2>예배 순서</h2></header>' +
+      (J.praise ? '<p class="praise"><b aria-hidden="true">♬</b> ' + t(J.praise) + "</p>" : "") +
+      '<p class="key">※ 일어섬 · ♬ 찬양</p><div class="order">' +
+      (J.order || []).map(function (o) {
+        if (o.section) {
+          return '<h3 class="sec">' + t(o.section) + "</h3>" +
+            (o.song ? '<p class="sec-song"><b aria-hidden="true">♬</b> ' + t(o.song) + "</p>" : "");
+        }
+        return '<div class="row' + (o.strong ? " strong" : "") + '"><span class="flag">' + (o.stand ? "※" : "") + "</span>" +
+          '<div class="body"><div class="line"><span class="nm">' + t(o.name) + '</span><span class="by">' + t(o.by) + "</span></div>" +
+          (o.mid ? '<p class="mid">' + (o.song ? "<b aria-hidden=\"true\">♬</b> " : "") + t(o.mid) + "</p>" : "") +
+          "</div></div>";
+      }).join("") +
+      "</div></section>";
 
-    // ---------- 3. 소식 ----------
-    var h = J.newsHeadline || [];
-    var p3 = '<section class="page">' + head("교회 행사 및 교우 소식") +
-      '<p class="headline">' + h.map(function (x, i) { return i % 2 ? "<em>" + esc(x) + "</em>" : esc(x); }).join("") + '</p>' +
-      '<ul class="prayers">' + J.prayers.map(function (p) { return "<li>" + t(p) + "</li>"; }).join("") + '</ul>' +
-      '<ol class="news">' + J.news.map(function (n) { var a = n.split("\n"); return "<li><b>" + t(a[0]) + "</b>" + (a.length > 1 ? '<span class="sub">' + t(a.slice(1).join("\n")) + "</span>" : "") + "</li>"; }).join("") + '</ol>' +
-      sub("( " + J.month + " )월 예배위원 / 주요 행사") +
-      '<table class="grid servers"><thead><tr><th>일</th><th>설 교</th><th>기 도</th><th>헌 금</th><th>성경봉독</th><th>주요 행사 계획</th></tr></thead><tbody>' +
-      J.servers.map(function (r) { return "<tr>" + r.map(function (c, i) { return "<td" + (i === 5 ? ' class="ev"' : "") + ">" + t(c) + "</td>"; }).join("") + "</tr>"; }).join("") + '</tbody></table>' +
-      '<table class="grid newc"><thead><tr><th></th><th>새가족/방문자</th><th>인도자</th><th>소속</th></tr></thead><tbody>' +
-      J.newcomers.map(function (r) { return "<tr>" + r.map(function (c) { return "<td>" + t(c) + "</td>"; }).join("") + "</tr>"; }).join("") + '</tbody></table>' +
-      sub("지난 주 헌금자 명단") +
-      '<dl class="offer">' + J.offerings.map(function (o) { return "<dt>" + o[0] + "</dt><dd>" + t(o[1]) + "</dd>"; }).join("") +
-      '<dt>청소년부</dt><dd class="youth">' + (J.youth || []).map(function (y) { return "<span><small>" + y[0] + "</small> " + t(y[1]) + "</span>"; }).join("") + '</dd></dl></section>';
+    var sermonBlock =
+      '<section class="block" id="sermon"><header class="sh"><span>02</span><h2>오늘의 말씀</h2></header>' +
+      '<article class="sermon-card">' +
+      (sermon ? "<h3>" + t(sermon.mid) + "</h3>" : "") +
+      (reading ? '<p class="scripture">' + t(reading.mid) + "</p>" : "") +
+      '<dl class="who-did">' +
+      (sermon && sermon.by ? "<div><dt>설교</dt><dd>" + t(sermon.by) + "</dd></div>" : "") +
+      (reading && reading.by ? "<div><dt>성경봉독</dt><dd>" + t(reading.by) + "</dd></div>" : "") +
+      (word && word.song ? "<div><dt>말씀 전 찬양</dt><dd>" + t(word.song) + "</dd></div>" : "") +
+      "</dl></article></section>";
 
-    // ---------- 4. 주일예배 ----------
-    var p4 = '<section class="page worship">' +
-      '<div class="w-top"><span>' + t(J.date) + '</span><span>' + t(J.issue) + '</span></div>' +
-      '<h2 class="w-title">주 일 예 배</h2>' +
-      '<div class="w-meta"><span>' + t(J.service.time) + '</span><span>' + t(J.service.leader) + '</span></div>' +
-      '<p class="praise">♬ ' + t(J.praise) + '</p>' +
-      '<div class="order">' + J.order.map(function (o) {
-        if (o.section) return '<h3 class="sec">' + esc(o.section) + '</h3>' + (o.song ? '<p class="sec-song">♬ ' + t(o.song) + "</p>" : "");
-        return '<div class="row' + (o.strong ? " strong" : "") + '"><span class="nm">' + (o.stand ? '<i class="st">※</i>' : '<i class="st"></i>') + esc(o.name) + '</span>' +
-          '<span class="dots"></span>' + (o.mid ? '<span class="mid">' + (o.song ? "♬ " : "") + t(o.mid) + '</span><span class="dots"></span>' : "") +
-          '<span class="by">' + t(o.by) + "</span></div>";
-      }).join("") + '</div></section>';
+    var headline = (J.newsHeadline || []).map(function (x, i) {
+      return i % 2 ? "<em>" + esc(x) + "</em>" : esc(x);
+    }).join("");
+    var news =
+      '<section class="block" id="news"><header class="sh"><span>03</span><h2>교회 소식</h2></header>' +
+      (headline ? '<p class="banner">' + headline + "</p>" : "") +
+      '<div class="stack">' +
+      (J.news || []).map(function (n, i) {
+        var a = String(n).split("\n");
+        return '<article class="card"><span class="idx">' + (i + 1) + "</span><div><h3>" + t(a[0]) + "</h3>" +
+          (a.length > 1 ? "<p>" + t(a.slice(1).join("\n")) + "</p>" : "") + "</div></article>";
+      }).join("") +
+      "</div></section>";
 
-    document.getElementById("jubo").innerHTML = p1 + p2 + p3 + p4;
+    var prayer =
+      '<section class="block" id="prayer"><header class="sh"><span>04</span><h2>기도 제목</h2></header><ol class="stack">' +
+      (J.prayers || []).map(function (p, i) {
+        return '<li class="card"><span class="idx">' + (i + 1) + "</span><p>" + t(p) + "</p></li>";
+      }).join("") +
+      "</ol></section>";
+
+    var servers =
+      '<section class="block" id="servers"><header class="sh"><span>05</span><h2>' + t(J.month) + "월 섬기는 분들</h2></header>" +
+      '<div class="srv-list">' +
+      (J.servers || []).map(function (r) {
+        var now = isThisSunday(r[0], J);
+        var ev = r[5];
+        return '<article class="srv' + (now ? " is-now" : "") + '"><div class="srv-day"><b>' + t(r[0]) + "</b>" +
+          (now ? "<em>이번 주</em>" : "") + "</div><div class=\"roles\">" +
+          role("설교", r[1]) + role("기도", r[2]) + role("헌금", r[3]) + role("성경봉독", r[4]) +
+          "</div>" + (blank(ev) ? "" : '<p class="ev"><i>주요 행사</i> ' + t(ev) + "</p>") +
+          "</article>";
+      }).join("") +
+      "</div></section>";
+
+    var welcome =
+      '<section class="block" id="welcome"><header class="sh"><span>06</span><h2>새가족 환영</h2></header><ul class="people">' +
+      (J.newcomers || []).map(function (r) {
+        return "<li><b>" + t(r[0]) + "</b><div><strong>" + t(r[1]) + "</strong>" +
+          field("인도자", r[2]) + field("소속", r[3]) + "</div></li>";
+      }).join("") +
+      "</ul></section>";
+
+    var offering =
+      '<section class="block" id="offering"><header class="sh"><span>07</span><h2>헌금 안내</h2></header>' +
+      '<p class="note">지난 주 헌금자 명단</p><div class="offer">' +
+      (J.offerings || []).map(function (o) {
+        return "<div><dt>" + t(o[0]) + "</dt><dd>" + (blank(o[1]) ? '<span class="empty">—</span>' : t(o[1])) + "</dd></div>";
+      }).join("") +
+      "</div>" +
+      (J.youth && J.youth.length
+        ? '<h3 class="sub">청소년부</h3><div class="offer">' + J.youth.map(function (y) {
+          return "<div><dt>" + t(y[0]) + "</dt><dd>" + (blank(y[1]) ? '<span class="empty">—</span>' : t(y[1])) + "</dd></div>";
+        }).join("") + "</div>"
+        : "") +
+      "</section>";
+
+    var guide =
+      '<section class="block" id="guide"><header class="sh"><span>08</span><h2>예배 · 모임 안내</h2></header>' +
+      '<h3 class="sub">예배 시간</h3><ul class="times">' +
+      (C.services || []).map(function (s) {
+        return "<li><span>" + t(s[0]) + "</span><b>" + t(s[1]) + "</b></li>";
+      }).join("") +
+      "</ul><h3 class=\"sub\">주중 모임</h3><ul class=\"times meet\">" +
+      (C.weekday || []).map(function (w) {
+        return "<li><span>" + t(w.name) + "</span><b>" + t(w.time) + "</b><small>인도 " + t(w.leader) + "</small></li>";
+      }).join("") +
+      '</ul><h3 class="sub">교회 비전</h3><div class="vision">' +
+      (C.vision || []).map(function (v) {
+        return "<article><h3>" + t(v.title) + '</h3><p class="verse">' + t(v.verse) + "</p><p>" + t(v.desc) + "</p></article>";
+      }).join("") +
+      "</div></section>";
+
+    var mapQuery = (C.address || []).join(", ");
+    var mapHref = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(mapQuery);
+    var visit =
+      '<section class="block" id="visit"><header class="sh"><span>09</span><h2>오시는 길</h2></header>' +
+      '<p class="addr">' + (C.address || []).map(function (line) { return t(line); }).join("<br>") + "</p>" +
+      '<a class="map-btn" href="' + esc(mapHref) + '" target="_blank" rel="noopener noreferrer">지도에서 보기</a></section>' +
+      '<section class="block" id="contact"><header class="sh"><span>10</span><h2>연락처</h2></header><ul class="contact">' +
+      '<li><span>전화</span><a href="tel:' + esc(String(C.tel).replace(/[^\d+]/g, "")) + '">' + esc(C.tel) + "</a></li>" +
+      '<li><span>이메일</span><a href="mailto:' + esc(C.email) + '">' + esc(C.email) + "</a></li>" +
+      (C.pastors || []).map(function (p) {
+        return "<li><span>" + esc(p[0]) + "</span><b>" + esc(p[1]) + "</b></li>";
+      }).join("") +
+      "</ul>" +
+      (C.invitation ? '<p class="invite">' + t(C.invitation) + "</p>" : "") +
+      "</section>";
+
+    document.getElementById("jubo").innerHTML = hero + order + sermonBlock + news + prayer + servers + welcome + offering + guide + visit;
+    bindNav();
+
+    function role(label, value) {
+      return "<p><i>" + label + "</i><b>" + (blank(value) ? '<span class="empty">—</span>' : t(value)) + "</b></p>";
+    }
+    function field(label, value) {
+      if (blank(value)) return "";
+      return "<p><i>" + label + "</i> " + t(value) + "</p>";
+    }
   }
-  function head(x) { return '<header class="ph-head"><span class="rule"></span><h2>' + x + '</h2><span class="rule"></span></header>'; }
-  function sub(x) { return '<h3 class="subhead"><span>' + x + "</span></h3>"; }
 
-  var MAP = '<svg viewBox="0 0 400 330" class="mapsvg" role="img" aria-label="교회 약도">' +
-    '<g class="road"><rect x="0" y="22" width="400" height="16"/><rect x="40" y="22" width="16" height="308"/><rect x="200" y="22" width="16" height="308"/><rect x="372" y="22" width="16" height="308"/><rect x="216" y="138" width="156" height="14"/></g>' +
-    '<g class="rl"><text x="230" y="16">Meralco · Medical City</text><text x="300" y="54">Ortigas Ave</text><text x="70" y="54">← Green Hills</text>' +
-    '<text x="48" y="120" class="v">EDSA</text><text x="208" y="200" class="v">Meralco Ave</text><text x="380" y="120" class="v">C5</text><text x="255" y="149">← Julia Vargas →</text></g>' +
-    '<g class="blk"><rect x="66" y="62" width="120" height="58" rx="4"/><rect x="226" y="62" width="136" height="66" rx="4"/><rect x="66" y="160" width="120" height="40" rx="4"/>' +
-    '<rect x="66" y="212" width="120" height="104" rx="4"/><rect x="226" y="162" width="136" height="60" rx="4"/><rect x="226" y="232" width="136" height="70" rx="4"/></g>' +
-    '<g class="bl"><text x="74" y="78">Robinson Gr</text><text x="74" y="92">A D B</text><text x="136" y="112">Shell station</text><text x="70" y="146">Mega Mall</text>' +
-    '<text x="90" y="186">Regency Hotel</text><text x="74" y="232">Sangrila Hotel</text><text x="74" y="252">Alexander Con.</text>' +
-    '<text x="74" y="296" class="s">2F Bramante Piazza ClubHouse</text><text x="74" y="308" class="s">Brgy Ugong Ortigas Center</text>' +
-    '<text x="236" y="98">Home Depot</text><text x="320" y="78">C C F</text><text x="236" y="180">MMDA</text>' +
-    '<text x="236" y="256">Ayala 30th</text><text x="292" y="256">Renaissance</text><text x="292" y="270">Condominium</text><text x="290" y="296">Saint PAUL</text><text x="232" y="324">EASTANCIA</text></g>' +
-    '<g class="pin"><circle cx="300" cy="196" r="9"/><circle cx="300" cy="196" r="3.5" fill="#fff"/><text x="314" y="194">한마음제자</text><text x="314" y="208" class="s">Hanmaum</text></g></svg>';
+  function bindNav() {
+    var links = [].slice.call(document.querySelectorAll("#snav a"));
+    var sections = links.map(function (a) { return document.querySelector(a.getAttribute("href")); });
+    var nav = document.getElementById("snav");
+    var ticking = false;
+    function update() {
+      ticking = false;
+      var y = window.scrollY + 128;
+      var idx = 0;
+      sections.forEach(function (sec, i) { if (sec && sec.offsetTop <= y) idx = i; });
+      links.forEach(function (a, i) {
+        if (i === idx) a.setAttribute("aria-current", "true");
+        else a.removeAttribute("aria-current");
+      });
+      var on = links[idx];
+      if (!on) return;
+      var start = nav.scrollLeft;
+      var end = start + nav.clientWidth;
+      if (on.offsetLeft < start + 8 || on.offsetLeft + on.offsetWidth > end - 8) nav.scrollLeft = on.offsetLeft - 16;
+    }
+    window.addEventListener("scroll", function () {
+      if (!ticking) { ticking = true; requestAnimationFrame(update); }
+    }, { passive: true });
+    update();
+  }
 })();
