@@ -3,7 +3,7 @@ window.JUBO = {
   date: "2026.10.11",
   issue: "2026 - 제41호",
   service: { time: "오전10:50", leader: "인도 김팔옥목사" },
-  praise: "[찬양 1],  [찬양 2],  [찬양 3],  [찬양 4]",
+  praise: "예수 우리왕이여,  감사,  하나님의 부르심,  예수 피를 힘입어",
   order: [
     { section: "찬양과 간구와 고백" },
     { name: "예배의부름", stand: true, by: "인도자" },
