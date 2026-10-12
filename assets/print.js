@@ -2,6 +2,7 @@
   var q = new URLSearchParams(location.search);
   var requested = q.get("week");
   var week = requested || window.JUBO_CURRENT;
+  var mode = q.get("fold") === "1" ? "booklet" : "single";
 
   function esc(v) {
     return String(v == null ? "" : v).replace(/[&<>"]/g, function (c) {
@@ -53,11 +54,104 @@
     document.getElementById("tools").innerHTML =
       '<a class="brand" href="' + back + '"><img src="' + esc(church.logo || "assets/logo.png") + '" alt="" width="36" height="36"><span>' + esc(church.name || "주보") + " 인쇄</span></a>" +
       '<div class="tool-row"><label>주차 <select aria-label="주보 주차">' + opts + "</select></label>" +
-      '<button type="button" id="do-print">인쇄 / PDF</button></div>';
+      '<button type="button" id="do-print">인쇄 / PDF</button>' +
+      '<button type="button" id="do-pdf">인쇄용 PDF 받기</button></div>';
+    document.getElementById("guide").hidden = false;
+    document.getElementById("guide").innerHTML =
+      '<div class="mode-row" role="group" aria-label="인쇄 모양">' +
+      '<button type="button" id="mode-booklet">접는 주보 (A4 한 장 앞뒤)</button>' +
+      '<button type="button" id="mode-single">한 장에 한 쪽씩 (A4 4장)</button></div>' +
+      '<div class="howto" id="howto"></div>';
     document.querySelector("#tools select").addEventListener("change", function () {
-      location.search = "?week=" + encodeURIComponent(this.value);
+      var params = new URLSearchParams(location.search);
+      params.delete("draft");
+      params.set("week", this.value);
+      if (mode === "booklet") params.set("fold", "1");
+      else params.delete("fold");
+      location.search = "?" + params.toString();
     });
     document.getElementById("do-print").addEventListener("click", function () { window.print(); });
+    document.getElementById("do-pdf").addEventListener("click", function () { window.print(); });
+    document.getElementById("mode-booklet").addEventListener("click", function () { setMode("booklet"); });
+    document.getElementById("mode-single").addEventListener("click", function () { setMode("single"); });
+    syncGuide();
+  }
+
+  function setMode(next) {
+    mode = next;
+    var params = new URLSearchParams(location.search);
+    if (mode === "booklet") params.set("fold", "1");
+    else params.delete("fold");
+    history.replaceState(null, "", location.pathname + "?" + params.toString());
+    applyMode();
+  }
+
+  function syncGuide() {
+    var book = mode === "booklet";
+    var bookletBtn = document.getElementById("mode-booklet");
+    var singleBtn = document.getElementById("mode-single");
+    if (bookletBtn) bookletBtn.setAttribute("aria-pressed", book ? "true" : "false");
+    if (singleBtn) singleBtn.setAttribute("aria-pressed", book ? "false" : "true");
+    var how = document.getElementById("howto");
+    if (!how) return;
+    if (book) {
+      how.innerHTML =
+        "<p><b>접는 주보</b>는 A4 한 장을 앞뒤로 인쇄한 뒤 반으로 접습니다. 앞면은 왼쪽 4쪽, 오른쪽 1쪽입니다. 뒷면은 왼쪽 2쪽, 오른쪽 3쪽입니다.</p>" +
+        "<ol><li>용지: A4</li><li>배율: 100% (용지에 맞추기 끄기)</li><li>양면 인쇄: 짧은 쪽 넘기기</li><li>배경 그래픽 켜기</li><li>인쇄한 다음 반으로 접기. 1쪽이 겉표지입니다.</li></ol>" +
+        "<p>PDF로 받으려면 <b>인쇄용 PDF 받기</b>를 누르고, 대상을 PDF로 저장으로 고르세요.</p>";
+    } else {
+      how.innerHTML =
+        "<p><b>한 장에 한 쪽씩</b>은 A4 네 장입니다. 표지, 예배 순서, 소식, 안내 순서입니다.</p>" +
+        "<ol><li>용지: A4</li><li>배율: 100%</li><li>배경 그래픽 켜기</li></ol>";
+    }
+  }
+
+  function applyMode() {
+    var bookEl = document.getElementById("book");
+    var sheets = [].slice.call(bookEl.querySelectorAll(".sheet"));
+    sheets.sort(function (a, b) {
+      var fa = a.querySelector(".folio");
+      var fb = b.querySelector(".folio");
+      var na = fa ? parseInt(fa.textContent, 10) : 0;
+      var nb = fb ? parseInt(fb.textContent, 10) : 0;
+      return na - nb;
+    });
+    document.body.classList.toggle("booklet", mode === "booklet");
+    var rule = document.getElementById("page-rule");
+    if (rule) {
+      rule.textContent = mode === "booklet"
+        ? "@page { size: A4 landscape; margin: 0; }"
+        : "@page { size: A4 portrait; margin: 0; }";
+    }
+    if (sheets.length !== 4) { syncGuide(); return; }
+    if (mode === "booklet") {
+      bookEl.innerHTML = "";
+      bookEl.appendChild(makeSpread("앞면", "왼쪽 4쪽 · 오른쪽 1쪽", [sheets[3], sheets[0]]));
+      bookEl.appendChild(makeSpread("뒷면", "왼쪽 2쪽 · 오른쪽 3쪽", [sheets[1], sheets[2]]));
+    } else {
+      bookEl.innerHTML = "";
+      sheets.forEach(function (sheet) { bookEl.appendChild(sheet); });
+    }
+    syncGuide();
+  }
+
+  function makeSpread(title, detail, pair) {
+    var wrap = document.createElement("section");
+    wrap.className = "spread-wrap";
+    var label = document.createElement("p");
+    label.className = "spread-label no-print";
+    label.textContent = title + " · " + detail;
+    var spread = document.createElement("div");
+    spread.className = "spread";
+    pair.forEach(function (sheet) {
+      var slot = document.createElement("div");
+      slot.className = "slot";
+      slot.appendChild(sheet);
+      spread.appendChild(slot);
+    });
+    wrap.appendChild(label);
+    wrap.appendChild(spread);
+    return wrap;
   }
 
   function render(C, J, week) {
@@ -193,6 +287,7 @@
       folio(4) + "</div></section>";
 
     document.getElementById("book").innerHTML = cover + page2 + page3 + page4;
+    applyMode();
   }
 
   if (q.get("draft") === "1") {
