@@ -74,7 +74,8 @@
       '<section class="sheet cover">' +
       '<div class="sheet-in">' +
       '<div class="mast"><img src="' + esc(C.logo) + '" alt="">' +
-      '<div><p class="name">' + esc(C.name) + '</p><p class="slogan">' + t(C.slogan) + "</p></div>" +
+      '<div><p class="name">' + esc(C.name) + '</p><p class="slogan">' + t(C.slogan) + "</p>" +
+      (J.season ? '<p class="season">' + t(J.season) + "</p>" : "") + "</div>" +
       '<p class="issue">' + t(J.issue) + "</p></div>" +
       '<div class="date-band"><p class="num">' + num + '</p><div><p class="big">' + esc(when) + '</p><p class="dow">' + esc(dow) + "</p></div></div>" +
       '<div class="sermon-panel"><div>' +
@@ -192,6 +193,22 @@
       folio(4) + "</div></section>";
 
     document.getElementById("book").innerHTML = cover + page2 + page3 + page4;
+  }
+
+  if (q.get("draft") === "1") {
+    var pack = null;
+    try { pack = JSON.parse(localStorage.getItem("hmj-preview") || ""); } catch (e) {}
+    if (!pack || !pack.jubo) {
+      document.getElementById("book").innerHTML = '<p class="err">미리보기 내용을 찾지 못했습니다. 수정 화면에서 다시 열어 주세요.</p>';
+      return;
+    }
+    var dw = pack.week || week;
+    if (window.JUBO_WEEKS && dw && window.JUBO_WEEKS.indexOf(dw) < 0) window.JUBO_WEEKS = [dw].concat(window.JUBO_WEEKS);
+    renderChrome(dw);
+    var back = document.querySelector("#tools .brand");
+    if (back) back.setAttribute("href", "edit.html" + (dw ? "?week=" + encodeURIComponent(dw) : ""));
+    render(window.CHURCH, pack.jubo, dw);
+    return;
   }
 
   renderChrome(week);

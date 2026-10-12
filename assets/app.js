@@ -71,9 +71,13 @@
     document.getElementById("toolbar").innerHTML =
       '<a class="brand" href="#cover"><img src="' + esc(church.logo || "assets/logo.png") + '" alt="" width="36" height="36"><span>' + esc(church.name || "주보") + "</span></a>" +
       '<div class="tools"><label class="week"><span class="sr">주차</span><select aria-label="주보 주차">' + opts + "</select></label>" +
+      '<button type="button" id="edit-btn">수정하기</button>' +
       '<button type="button" id="print-btn" aria-label="인쇄 / PDF"><span class="long">인쇄 / PDF</span><span class="short">인쇄</span></button></div>';
     document.querySelector("#toolbar select").addEventListener("change", function () {
       location.search = "?week=" + encodeURIComponent(this.value);
+    });
+    document.getElementById("edit-btn").addEventListener("click", function () {
+      location.href = "edit.html?week=" + encodeURIComponent(week);
     });
     document.getElementById("print-btn").addEventListener("click", function () {
       location.href = "print.html?week=" + encodeURIComponent(week);

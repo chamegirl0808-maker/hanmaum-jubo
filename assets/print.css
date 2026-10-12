@@ -96,6 +96,7 @@ mark.ph {
 }
 .mast .name { margin: 0; font-size: 16pt; font-weight: 700; letter-spacing: -0.03em; }
 .mast .slogan { margin: .6mm 0 0; color: var(--soft); font-size: 11pt; }
+.mast .season { margin: .8mm 0 0; color: var(--clay); font-size: 11pt; font-weight: 700; }
 .mast .issue { margin: 0 0 0 auto; color: var(--clay); font-weight: 700; font-size: 12pt; text-align: right; }
 .date-band {
   margin-top: 6mm;

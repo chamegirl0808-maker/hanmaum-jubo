@@ -61,7 +61,7 @@ a { color: inherit; }
   background: #fff; border: 1px solid var(--line);
 }
 .brand span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tools { display: flex; align-items: center; gap: 8px; flex: none; }
+.tools { display: flex; align-items: center; gap: 8px; flex: none; flex-wrap: wrap; justify-content: flex-end; }
 .week select {
   appearance: none;
   border: 1px solid var(--line);
@@ -86,6 +86,17 @@ a { color: inherit; }
   white-space: nowrap;
 }
 #print-btn .short { display: none; }
+#edit-btn {
+  border: 1px solid var(--ink);
+  background: #fff;
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+  white-space: nowrap;
+}
 .snav .bar-in {
   display: flex;
   gap: 6px;
