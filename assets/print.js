@@ -212,7 +212,7 @@
       '<a class="brand" href="' + back + '"><img src="' + esc(church.logo || "assets/logo.png") + '" alt="" width="36" height="36"><span>' + esc(church.name || "주보") + " 인쇄</span></a>" +
       '<div class="tool-row"><label>주차 <select aria-label="주보 주차">' + opts + "</select></label>" +
       '<button type="button" id="do-print">인쇄 / PDF</button>' +
-      '<button type="button" id="do-pdf">인쇄용 PDF 받기</button></div>';
+      '<button type="button" id="do-booklet-pdf">접는 주보 PDF 받기</button></div>';
     document.getElementById("guide").hidden = false;
     document.getElementById("guide").innerHTML =
       '<div class="mode-row" role="group" aria-label="인쇄 모양">' +
@@ -228,7 +228,7 @@
       location.search = "?" + params.toString();
     });
     document.getElementById("do-print").addEventListener("click", function () { window.print(); });
-    document.getElementById("do-pdf").addEventListener("click", function () { window.print(); });
+    document.getElementById("do-booklet-pdf").addEventListener("click", function () { bookletPdf(); });
     document.getElementById("mode-booklet").addEventListener("click", function () { setMode("booklet"); });
     document.getElementById("mode-single").addEventListener("click", function () { setMode("single"); });
     syncGuide();
@@ -254,8 +254,8 @@
     if (book) {
       how.innerHTML =
         "<p><b>접는 주보</b>는 A4 한 장을 앞뒤로 인쇄한 뒤 반으로 접습니다. 앞면은 왼쪽 4쪽, 오른쪽 1쪽입니다. 뒷면은 왼쪽 2쪽, 오른쪽 3쪽입니다.</p>" +
-        "<ol><li>용지: A4</li><li>배율: 100% (용지에 맞추기 끄기)</li><li>양면 인쇄: 짧은 쪽 넘기기</li><li>배경 그래픽 켜기</li><li>인쇄한 다음 반으로 접기. 1쪽이 겉표지입니다.</li></ol>" +
-        "<p>PDF로 받으려면 <b>인쇄용 PDF 받기</b>를 누르고, 대상을 PDF로 저장으로 고르세요.</p>";
+        "<p class=\"print-note no-print\">인쇄 설정: 용지 A4, 방향 가로, 여백 없음(또는 기본), 배율 100%, 양면 짧은 쪽 넘기기, 배경 그래픽 켜기</p>" +
+        "<p>글자가 잘리면 <b>접는 주보 PDF 받기</b>로 받은 파일을 배율 100%로 인쇄하세요. 인쇄한 다음 반으로 접으면 1쪽이 겉표지입니다.</p>";
     } else {
       how.innerHTML =
         "<p><b>한 장에 한 쪽씩</b>은 A4 네 장입니다. 표지, 예배 순서, 소식, 안내 순서입니다.</p>" +
@@ -303,7 +303,10 @@
     pair.forEach(function (sheet) {
       var slot = document.createElement("div");
       slot.className = "slot";
-      slot.appendChild(sheet);
+      var mini = document.createElement("div");
+      mini.className = "mini";
+      mini.appendChild(sheet);
+      slot.appendChild(mini);
       spread.appendChild(slot);
     });
     wrap.appendChild(label);
@@ -498,8 +501,10 @@
       '<button type="button" id="edit-reset">처음대로</button></div>' +
       '<div class="edit-row" style="margin-top:8px">' +
       '<button type="button" id="edit-fold" class="printy grow">접는 주보 인쇄</button>' +
+      '<button type="button" id="edit-fold-pdf" class="printy grow">접는 주보 PDF 받기</button>' +
       '<button type="button" id="edit-single" class="printy grow">한 장씩 인쇄</button></div>' +
       '<p class="edit-hint">글자를 누르면 바로 고칩니다. 글자가 작으면 두 손가락으로 키우세요.</p>' +
+      '<p class="print-note no-print">인쇄 설정: 용지 A4, 방향 가로, 여백 없음(또는 기본), 배율 100%, 양면 짧은 쪽 넘기기, 배경 그래픽 켜기</p>' +
       '<p class="edit-status" id="edit-status" role="status"></p>' +
       '<div class="tokenbox" id="tokenbox" hidden><p id="token-note">' + esc(tokenNote) + "</p>" +
       "<p>홈페이지에 올리려면 깃허브 토큰을 넣어 주세요. 토큰은 이 휴대폰에만 남습니다.</p>" +
@@ -674,6 +679,80 @@
       setEditStatus(err && err.message ? err.message : "인터넷 연결을 확인해 주세요.");
     }).then(function () { if (btn) btn.disabled = false; });
   }
+  function loadScript(src) {
+    return new Promise(function (resolve, reject) {
+      if (document.querySelector('script[src="' + src + '"]')) { resolve(); return; }
+      var s = document.createElement("script");
+      s.src = src;
+      s.onload = function () { resolve(); };
+      s.onerror = function () { reject(new Error("script")); };
+      document.head.appendChild(s);
+    });
+  }
+  function setPdfStatus(msg) {
+    setEditStatus(msg);
+    var how = document.getElementById("howto");
+    if (!how) return;
+    var note = document.getElementById("pdf-status");
+    if (!note) {
+      note = document.createElement("p");
+      note.id = "pdf-status";
+      note.className = "print-note no-print";
+      how.appendChild(note);
+    }
+    note.textContent = msg || "";
+  }
+  function bookletPdf() {
+    if (editing) harvest();
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    var prev = mode;
+    mode = "booklet";
+    applyMode();
+    var book = document.getElementById("book");
+    var prevStyle = book.getAttribute("style");
+    book.style.transform = "none";
+    book.style.marginLeft = "0px";
+    book.style.marginBottom = "0px";
+    var buttons = [].slice.call(document.querySelectorAll("#do-booklet-pdf, #edit-fold-pdf"));
+    buttons.forEach(function (b) { b.disabled = true; });
+    setPdfStatus("PDF를 만드는 중입니다. 잠시만 기다려 주세요.");
+    function restore() {
+      buttons.forEach(function (b) { b.disabled = false; });
+      if (prevStyle) book.setAttribute("style", prevStyle);
+      else book.removeAttribute("style");
+      if (prev !== "booklet") { mode = prev; applyMode(); }
+      if (editing) fitWidth();
+    }
+    return loadScript("https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js").then(function () {
+      return loadScript("https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js");
+    }).then(function () {
+      return new Promise(function (resolve) { setTimeout(resolve, 60); });
+    }).then(function () {
+      var spreads = [].slice.call(document.querySelectorAll(".spread"));
+      var pdf = new window.jspdf.jsPDF({ orientation: "landscape", unit: "mm", format: "a4", compress: true });
+      var chain = Promise.resolve();
+      spreads.forEach(function (spread, i) {
+        chain = chain.then(function () {
+          return window.html2canvas(spread, {
+            scale: 2,
+            backgroundColor: "#ffffff",
+            useCORS: true,
+            logging: false
+          }).then(function (canvas) {
+            if (i > 0) pdf.addPage("a4", "landscape");
+            pdf.addImage(canvas.toDataURL("image/jpeg", 0.95), "JPEG", 0, 0, 297, 210);
+          });
+        });
+      });
+      return chain.then(function () {
+        var iso = (viewJ && dotToIso(viewJ.date)) || week || "jubo";
+        pdf.save("jubo-booklet-" + iso + ".pdf");
+        setPdfStatus("접는 주보 PDF를 내려받았습니다. 배율 100%로 인쇄하세요.");
+      });
+    }).catch(function () {
+      setPdfStatus("PDF를 만들지 못했습니다. 접는 주보 인쇄로 저장해 주세요.");
+    }).then(restore);
+  }
   function printAs(next) {
     harvest();
     mode = next;
@@ -723,6 +802,7 @@
     if (btn.id === "edit-save" || btn.id === "token-go") return saveAll();
     if (btn.id === "edit-reset") return resetDraft();
     if (btn.id === "edit-fold") return printAs("booklet");
+    if (btn.id === "edit-fold-pdf") return bookletPdf();
     if (btn.id === "edit-single") return printAs("single");
     if (btn.id === "file-go") { harvest(); downloadFiles(); setEditStatus("파일을 내려받았습니다."); return; }
     if (btn.getAttribute("data-add")) return addRow(btn.getAttribute("data-add"));
@@ -740,6 +820,8 @@
     if (book) { book.style.transform = "none"; book.style.marginLeft = "0px"; book.style.marginBottom = "0px"; }
   });
   window.addEventListener("afterprint", function () {
+    var book = document.getElementById("book");
+    if (book && !editing) { book.style.transform = ""; book.style.marginLeft = ""; book.style.marginBottom = ""; }
     if (!editing) return;
     if (mode !== "single") { mode = "single"; applyMode(); }
     fitWidth();

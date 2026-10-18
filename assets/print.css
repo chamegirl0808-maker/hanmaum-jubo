@@ -108,8 +108,26 @@ body.booklet .spread::after {
   border-left: 0.3mm dashed #c4b3a4;
   pointer-events: none;
 }
-body.booklet .slot { position: relative; width: 148.5mm; height: 210mm; overflow: hidden; flex: none; }
-body.booklet .slot .sheet {
+body.booklet .slot {
+  position: relative;
+  width: 148.5mm;
+  height: 210mm;
+  overflow: hidden;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+/* 210×297 page fitted inside each half with 8mm side gutters, centered. */
+body.booklet .mini {
+  width: 132.5mm;
+  height: 187.392857mm;
+  overflow: hidden;
+  flex: none;
+  position: relative;
+}
+body.booklet .mini .sheet {
   position: absolute;
   top: 0;
   left: 0;
@@ -117,8 +135,12 @@ body.booklet .slot .sheet {
   height: 297mm;
   margin: 0;
   box-shadow: none;
-  transform: scale(0.707070707);
-  transform-origin: top left;
+  transform: none;
+  zoom: 0.630952381;
+  break-before: auto;
+  break-after: auto;
+  page-break-before: auto;
+  page-break-after: auto;
 }
 .err { margin: 24px; }
 
@@ -130,8 +152,6 @@ body.booklet .slot .sheet {
   position: relative;
   overflow: hidden;
   box-shadow: 0 8px 28px rgba(60, 40, 20, .12);
-  page-break-after: always;
-  break-after: page;
 }
 .sheet:last-child { page-break-after: auto; break-after: auto; }
 .inner { position: absolute; inset: 11mm 13mm 10mm 13mm; display: flex; flex-direction: column; }
@@ -411,31 +431,78 @@ body.booklet .slot .sheet {
 .closing .c2 { color: var(--navy); font-weight: 700; }
 .closing u { text-decoration-color: var(--gold); text-underline-offset: 1mm; }
 
+@page {
+  size: A4 portrait;
+  margin: 0;
+}
+@page portrait {
+  size: A4 portrait;
+  margin: 0;
+}
+@page landscape {
+  size: A4 landscape;
+  margin: 0;
+}
+.print-note {
+  margin-top: 10px;
+  background: #fff;
+  border: 1px solid var(--gold-l);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--navy);
+  line-height: 1.45;
+}
+
 @media print {
-  html, body { background: #fff !important; }
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    overflow: hidden !important;
+  }
+  body:not(.booklet) { width: 210mm !important; }
+  body.booklet { width: 297mm !important; }
   .no-print { display: none !important; }
   body:not(.booklet) .sheet {
-    margin: 0;
+    width: 210mm;
+    height: 297mm;
+    margin: 0 auto;
     box-shadow: none;
+    overflow: hidden;
     break-after: page;
     break-inside: avoid;
+    page: portrait;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
-  body:not(.booklet) .sheet:last-child { break-after: auto; }
+  body:not(.booklet) .sheet:last-child { break-after: auto; page-break-after: auto; }
+  body.booklet #book,
+  body.booklet .spread-wrap,
+  body.booklet .spread,
+  body.booklet .slot,
+  body.booklet .mini {
+    box-sizing: border-box;
+  }
   body.booklet .spread-wrap {
     width: 297mm;
     height: 210mm;
     margin: 0;
+    padding: 0;
     overflow: hidden;
     break-after: page;
     break-inside: avoid;
+    page-break-after: always;
+    page-break-inside: avoid;
+    page: landscape;
   }
-  body.booklet .spread-wrap:last-child { break-after: auto; }
+  body.booklet .spread-wrap:last-child { break-after: auto; page-break-after: auto; }
   body.booklet .spread {
     width: 297mm;
     height: 210mm;
     margin: 0;
+    padding: 0;
     box-shadow: none;
     overflow: hidden;
   }
@@ -450,7 +517,7 @@ body.booklet .slot .sheet {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
-  #book { transform: none !important; margin-left: 0 !important; margin-bottom: 0 !important; }
+  #book { width: auto; transform: none !important; margin: 0 !important; padding: 0 !important; }
   .ed, .ed:focus, .ed.on { outline: none !important; background: transparent !important; box-shadow: none !important; }
   .ed:empty::before { content: none !important; }
   .editcol, .addline, .rowdel { display: none !important; }
