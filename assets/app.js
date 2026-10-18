@@ -77,7 +77,7 @@
       location.search = "?week=" + encodeURIComponent(this.value);
     });
     document.getElementById("edit-btn").addEventListener("click", function () {
-      location.href = "edit.html?week=" + encodeURIComponent(week);
+      location.href = "print.html?edit=1&week=" + encodeURIComponent(week);
     });
     document.getElementById("print-btn").addEventListener("click", function () {
       location.href = "print.html?week=" + encodeURIComponent(week);

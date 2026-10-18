@@ -3,6 +3,18 @@
   var requested = q.get("week");
   var week = requested || window.JUBO_CURRENT;
   var mode = q.get("fold") === "1" ? "booklet" : "single";
+  var editing = q.get("edit") === "1";
+  var viewJ = null;
+  var viewC = null;
+  var fileChurch = null;
+  var saveTimer = null;
+  var DRAFTS = "hmj-drafts";
+  var TOKEN = "hmj-github-token";
+  var REPO = "chamegirl0808-maker/hanmaum-jubo";
+  if (editing) {
+    mode = "single";
+    document.body.classList.add("editing");
+  }
 
   function esc(v) {
     return String(v == null ? "" : v).replace(/[&<>"]/g, function (c) {
@@ -43,8 +55,153 @@
     return '<header class="phead"><div><span>' + num + "</span><h2>" + title + "</h2></div>" +
       (extra ? '<p class="pmeta">' + extra + "</p>" : "") + "</header>";
   }
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function E(key, value) {
+    var raw = value == null ? "" : String(value);
+    var html = t(raw);
+    if (!editing) return blank(raw) ? "" : html;
+    return '<span class="ed" data-k="' + esc(key) + '" contenteditable="true" spellcheck="false">' + html + "</span>";
+  }
+  function plain(el) {
+    var html = el.innerHTML.replace(/<br\s*\/?>/gi, "\n").replace(/<\/(div|p)>/gi, "\n").replace(/<[^>]+>/g, "");
+    var ta = document.createElement("textarea");
+    ta.innerHTML = html;
+    return ta.value.replace(/\u00a0/g, " ").replace(/\n+$/g, "").replace(/^\n+/g, "");
+  }
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function parseLoose(s) {
+    var m = String(s || "").match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
+    if (!m) return null;
+    var y = Number(m[1]), mo = Number(m[2]), d = Number(m[3]);
+    var dt = new Date(y, mo - 1, d);
+    if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) return null;
+    return { y: y, m: mo, d: d, dot: y + "." + pad(mo) + "." + pad(d), iso: y + "-" + pad(mo) + "-" + pad(d) };
+  }
+  function dotToIso(dot) {
+    var p = parseLoose(dot);
+    return p ? p.iso : "";
+  }
+  function addDays(iso, n) {
+    var p = iso.split("-");
+    var dt = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+    dt.setDate(dt.getDate() + n);
+    return dt.getFullYear() + "-" + pad(dt.getMonth() + 1) + "-" + pad(dt.getDate());
+  }
+  function bumpIssue(issue, iso) {
+    var year = iso.slice(0, 4);
+    var m = String(issue || "").match(/제\s*(\d+)\s*호/);
+    var n = m ? Number(m[1]) + 1 : 1;
+    return year + " - 제" + n + "호";
+  }
+  function drafts() {
+    try { return JSON.parse(localStorage.getItem(DRAFTS) || "{}"); } catch (e) { return {}; }
+  }
+  function writeDraft(J, C) {
+    var iso = dotToIso(J.date);
+    if (!iso) return;
+    var all = drafts();
+    all[iso] = { at: Date.now(), jubo: J, church: C };
+    localStorage.setItem(DRAFTS, JSON.stringify(all));
+    var params = new URLSearchParams(location.search);
+    if (params.get("week") !== iso) {
+      params.set("week", iso);
+      params.set("edit", "1");
+      history.replaceState(null, "", location.pathname + "?" + params.toString());
+    }
+  }
+  function setEditStatus(msg) {
+    var el = document.getElementById("edit-status");
+    if (el) el.textContent = msg || "";
+  }
+  function setPath(J, C, key, val) {
+    var p = key.split(".");
+    if (key === "issue") J.issue = val;
+    else if (key === "season") { if (String(val).trim()) J.season = val; else delete J.season; }
+    else if (key === "date" || key === "when") {
+      var d = parseLoose(val);
+      if (d) { J.date = d.dot; J.month = String(d.m); }
+    } else if (key === "month") {
+      var num = String(val).replace(/월/g, "").trim();
+      if (num) J.month = num;
+    } else if (key === "time") { J.service = J.service || {}; J.service.time = val; }
+    else if (key === "leader") { J.service = J.service || {}; J.service.leader = val; }
+    else if (key === "praise") J.praise = val;
+    else if (p[0] === "head" && J.newsHeadline) J.newsHeadline[Number(p[1])] = val;
+    else if (p[0] === "ord" && J.order[Number(p[1])]) {
+      var o = J.order[Number(p[1])];
+      if (p[2] === "section") o.section = val;
+      else if (p[2] === "song" && o.section) { if (String(val).trim()) o.song = val; else delete o.song; }
+      else if (p[2] === "name") o.name = val;
+      else if (p[2] === "mid") o.mid = val;
+      else if (p[2] === "by") o.by = val;
+    } else if (p[0] === "news") J.news[Number(p[1])] = val;
+    else if (p[0] === "prayer") J.prayers[Number(p[1])] = val;
+    else if (p[0] === "srv") J.servers[Number(p[1])][Number(p[2])] = val;
+    else if (p[0] === "newc") J.newcomers[Number(p[1])][Number(p[2])] = val;
+    else if (p[0] === "off") J.offerings[Number(p[1])][Number(p[2])] = val;
+    else if (p[0] === "youth") J.youth[Number(p[1])][Number(p[2])] = val;
+    else if (p[0] === "ch") setChurch(C, p, val);
+  }
+  function setChurch(C, p, val) {
+    if (p[1] === "name") C.name = val;
+    else if (p[1] === "slogan") C.slogan = val;
+    else if (p[1] === "tel") C.tel = val;
+    else if (p[1] === "email") C.email = val;
+    else if (p[1] === "invite") C.invitation = val;
+    else if (p[1] === "addr") C.address = String(val).split(/\n/).map(function (s) { return s.trim(); }).filter(Boolean);
+    else if (p[1] === "motto") C.motto[Number(p[2])][Number(p[3])] = val;
+    else if (p[1] === "pastor") C.pastors[Number(p[2])][Number(p[3])] = val;
+    else if (p[1] === "vis") C.vision[Number(p[2])][p[3]] = val;
+    else if (p[1] === "wd") C.weekday[Number(p[2])][p[3]] = val;
+    else if (p[1] === "svc") C.services[Number(p[2])][Number(p[3])] = val;
+  }
+  function harvest() {
+    if (!viewJ || !viewC) return;
+    var J = clone(viewJ);
+    var C = clone(viewC);
+    [].forEach.call(document.querySelectorAll("#book .ed"), function (el) {
+      setPath(J, C, el.getAttribute("data-k"), plain(el));
+    });
+    viewJ = J;
+    viewC = C;
+    window.CHURCH = C;
+  }
+  function scheduleSave() {
+    if (!editing) return;
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function () {
+      try {
+        harvest();
+        writeDraft(viewJ, viewC);
+        setEditStatus("이 휴대폰에 저장해 두었습니다.");
+      } catch (e) { setEditStatus("임시 저장을 하지 못했습니다."); }
+    }, 400);
+  }
+  function fitWidth() {
+    var book = document.getElementById("book");
+    if (!book) return;
+    if (!editing) {
+      book.style.transform = "";
+      book.style.marginLeft = "";
+      book.style.marginBottom = "";
+      return;
+    }
+    book.style.transform = "none";
+    book.style.marginLeft = "0px";
+    book.style.marginBottom = "0px";
+    var target = book.querySelector(".spread") || book.querySelector(".sheet");
+    if (!target) return;
+    var natural = target.getBoundingClientRect().width;
+    var vw = document.documentElement.clientWidth;
+    var scale = Math.min(1, (vw - 16) / natural);
+    book.style.transformOrigin = "top left";
+    book.style.marginLeft = Math.max(8, (vw - natural * scale) / 2) + "px";
+    book.style.transform = "scale(" + scale + ")";
+    book.style.marginBottom = (-book.offsetHeight * (1 - scale)) + "px";
+  }
 
   function renderChrome(week) {
+    if (editing) { buildEditbar(week); return; }
     var weeks = window.JUBO_WEEKS || [week];
     var church = window.CHURCH || {};
     var opts = weeks.map(function (w) {
@@ -155,97 +312,108 @@
   }
 
   function render(C, J, week) {
-    document.title = C.name + " 주보 인쇄 · " + J.date;
-    var sermon = findName(J.order, "설교");
-    var reading = findName(J.order, "성경봉독");
+    viewC = clone(C);
+    viewJ = clone(J);
+    document.title = (C.name || "주보") + " 주보 인쇄 · " + J.date;
+    var sermonI = -1, readI = -1;
+    (J.order || []).forEach(function (o, i) {
+      if (o.name === "설교" && sermonI < 0) sermonI = i;
+      if (o.name === "성경봉독" && readI < 0) readI = i;
+    });
+    var sermon = sermonI >= 0 ? J.order[sermonI] : findName(J.order, "설교");
+    var reading = readI >= 0 ? J.order[readI] : findName(J.order, "성경봉독");
     var date = parseDate(J.date);
     var dow = date ? (date.dow === "일" ? "주일" : date.dow + "요일") : "";
-    var when = date ? (date.y + "년 " + date.m + "월 " + date.d + "일") : t(J.date);
+    var when = date ? (date.y + "년 " + date.m + "월 " + date.d + "일") : String(J.date || "");
     var num = date ? ((date.m < 10 ? "0" : "") + date.m + "<i>.</i>" + (date.d < 10 ? "0" : "") + date.d) : "";
-    var meta = t(J.date) + " · " + t(J.issue);
+    var meta = E("date", J.date) + " · " + E("issue", J.issue);
+    var sermonKey = sermonI >= 0 ? "ord." + sermonI + ".mid" : "sermon";
+    var readKey = readI >= 0 ? "ord." + readI + ".mid" : "scripture";
+    var byKey = sermonI >= 0 ? "ord." + sermonI + ".by" : "preacher";
 
     var cover =
       '<section class="sheet cover">' +
       '<div class="sheet-in">' +
       '<div class="mast"><img src="' + esc(C.logo) + '" alt="">' +
-      '<div><p class="name">' + esc(C.name) + '</p><p class="slogan">' + t(C.slogan) + "</p>" +
-      (J.season ? '<p class="season">' + t(J.season) + "</p>" : "") + "</div>" +
-      '<p class="issue">' + t(J.issue) + "</p></div>" +
-      '<div class="date-band"><p class="num">' + num + '</p><div><p class="big">' + esc(when) + '</p><p class="dow">' + esc(dow) + "</p></div></div>" +
+      '<div><p class="name">' + E("ch.name", C.name) + '</p><p class="slogan">' + E("ch.slogan", C.slogan) + "</p>" +
+      (J.season || editing ? '<p class="season">' + E("season", J.season || "") + "</p>" : "") + "</div>" +
+      '<p class="issue">' + E("issue", J.issue) + "</p></div>" +
+      '<div class="date-band"><p class="num">' + num + '</p><div><p class="big">' + E("when", when) + '</p><p class="dow" id="dow-label">' + esc(dow) + "</p></div></div>" +
       '<div class="sermon-panel"><div>' +
       '<p class="kicker">오늘의 말씀</p>' +
-      "<h1>" + (sermon ? t(sermon.mid) : "") + "</h1>" +
-      (reading ? '<p class="scripture">' + t(reading.mid) + "</p>" : "") +
+      "<h1>" + E(sermonKey, sermon && sermon.mid || "") + "</h1>" +
+      (reading || editing ? '<p class="scripture">' + E(readKey, reading && reading.mid || "") + "</p>" : "") +
       "</div><ul class=\"chips\">" +
-      "<li>" + t(J.service && J.service.time) + "</li>" +
-      "<li>" + t(J.service && J.service.leader) + "</li>" +
-      (sermon && sermon.by ? "<li>설교 " + t(sermon.by) + "</li>" : "") +
+      "<li>" + E("time", J.service && J.service.time) + "</li>" +
+      "<li>" + E("leader", J.service && J.service.leader) + "</li>" +
+      "<li>설교 " + E(byKey, sermon && sermon.by || "") + "</li>" +
       "</ul></div>" +
       '<div class="motto"><p class="kicker">표어</p>' +
-      (C.motto || []).map(function (m) {
-        return "<p>" + esc(m[0]) + "<em>" + esc(m[1]) + "</em>" + esc(m[2]) + "</p>";
+      (C.motto || []).map(function (m, i) {
+        return "<p>" + E("ch.motto." + i + ".0", m[0]) + "<em>" + E("ch.motto." + i + ".1", m[1]) + "</em>" + E("ch.motto." + i + ".2", m[2]) + "</p>";
       }).join("") + "</div>" +
       '<div class="pastors">' +
-      (C.pastors || []).map(function (p) {
-        return "<div><small>" + esc(p[0]) + "</small><b>" + esc(p[1]) + "</b></div>";
+      (C.pastors || []).map(function (p, i) {
+        return "<div><small>" + E("ch.pastor." + i + ".0", p[0]) + "</small><b>" + E("ch.pastor." + i + ".1", p[1]) + "</b></div>";
       }).join("") + "</div>" +
-      '<footer class="foot"><p class="addr">' + (C.address || []).map(t).join("<br>") + "</p>" +
-      '<p class="reach"><span>전화 ' + esc(C.tel) + "</span><span>" + esc(C.email) + "</span></p></footer>" +
+      '<footer class="foot"><p class="addr">' + E("ch.addr", (C.address || []).join("\n")) + "</p>" +
+      '<p class="reach"><span>전화 ' + E("ch.tel", C.tel) + "</span><span>" + E("ch.email", C.email) + "</span></p></footer>" +
       folio(1) + "</div></section>";
 
     var orderBits = "";
-    (J.order || []).forEach(function (o) {
+    (J.order || []).forEach(function (o, i) {
       if (o.section) {
-        orderBits += '<div class="sec"><h3>' + t(o.section) + "</h3>" +
-          (o.song ? '<p class="sec-song"><b>♬</b> ' + t(o.song) + "</p>" : "") + "</div>";
+        orderBits += '<div class="sec"><h3>' + E("ord." + i + ".section", o.section) + "</h3>" +
+          (o.song || editing ? '<p class="sec-song"><b>♬</b> ' + E("ord." + i + ".song", o.song || "") + "</p>" : "") + "</div>";
         return;
       }
-      var hasMid = !blank(o.mid);
+      var hasMid = !blank(o.mid) || editing;
       orderBits += '<div class="orow' + (o.strong ? " strong" : "") + (hasMid ? "" : " nomid") + '">' +
-        '<span class="oname"><i>' + (o.stand ? "※" : "") + "</i>" + t(o.name) + "</span>" +
+        '<span class="oname"><i>' + (o.stand ? "※" : "") + "</i>" + E("ord." + i + ".name", o.name) + "</span>" +
         '<span class="odots"></span>' +
-        (hasMid ? '<span class="omid">' + (o.song ? "<b>♬</b> " : "") + t(o.mid) + '</span><span class="odots"></span>' : "") +
-        '<span class="oby">' + t(o.by) + "</span></div>";
+        (hasMid ? '<span class="omid">' + (o.song ? "<b>♬</b> " : "") + E("ord." + i + ".mid", o.mid || "") + '</span><span class="odots"></span>' : "") +
+        '<span class="oby">' + E("ord." + i + ".by", o.by || "") + "</span></div>";
     });
     var page2 =
       '<section class="sheet">' +
       '<div class="sheet-in">' +
       head("02", "주일예배 순서", meta) +
-      (J.praise ? '<p class="praise"><b>♬</b> ' + t(J.praise) + "</p>" : "") +
-      '<p class="key">※ 일어섬 · ♬ 찬양 · ' + t(J.service && J.service.time) + " · " + t(J.service && J.service.leader) + "</p>" +
+      '<p class="praise"><b>♬</b> ' + E("praise", J.praise || "") + "</p>" +
+      '<p class="key">※ 일어섬 · ♬ 찬양 · ' + E("time", J.service && J.service.time) + " · " + E("leader", J.service && J.service.leader) + "</p>" +
       '<div class="order">' + orderBits + "</div>" +
       folio(2) + "</div></section>";
 
     var headline = (J.newsHeadline || []).map(function (x, i) {
-      return i % 2 ? "<em>" + esc(x) + "</em>" : esc(x);
+      return i % 2 ? "<em>" + E("head." + i, x) + "</em>" : E("head." + i, x);
     }).join("");
     var page3 =
       '<section class="sheet">' +
       '<div class="sheet-in">' +
       head("03", "교회 소식", meta) +
       (headline ? '<p class="banner">' + headline + "</p>" : "") +
-      '<section class="blk news"><h3>소식</h3><div class="stack">' +
+      '<section class="blk news"><h3>소식' + (editing ? ' <button type="button" class="addline" data-add="news">+ 줄 추가</button>' : "") + '</h3><div class="stack">' +
       (J.news || []).map(function (n, i) {
-        var a = String(n).split("\n");
-        return '<article><span>' + (i + 1) + "</span><div><p class=\"lead\">" + t(a[0]) + "</p>" +
-          (a.length > 1 ? "<p>" + t(a.slice(1).join("\n")) + "</p>" : "") + "</div></article>";
+        return '<article>' + (editing ? '<button type="button" class="rowdel" data-del="news" data-i="' + i + '">줄 삭제</button>' : "") +
+          '<span>' + (i + 1) + '</span><div><p class="lead">' + E("news." + i, n) + "</p></div></article>";
       }).join("") + "</div></section>" +
       '<section class="blk pray"><h3>기도 제목</h3><ol class="stack">' +
       (J.prayers || []).map(function (p, i) {
-        return "<li><span>" + (i + 1) + "</span><p>" + t(p) + "</p></li>";
+        return "<li><span>" + (i + 1) + "</span><p>" + E("prayer." + i, p) + "</p></li>";
       }).join("") + "</ol></section>" +
-      '<section class="blk serve"><h3>' + t(J.month) + '월 섬기는 분들</h3><table><thead><tr>' +
-      "<th>일</th><th>설교</th><th>기도</th><th>헌금</th><th>성경봉독</th><th>주요 행사</th></tr></thead><tbody>" +
-      (J.servers || []).map(function (r) {
+      '<section class="blk serve"><h3>' + E("month", J.month) + '월 섬기는 분들' +
+      (editing ? ' <button type="button" class="addline" data-add="srv">+ 줄 추가</button>' : "") + '</h3><table><thead><tr>' +
+      "<th>일</th><th>설교</th><th>기도</th><th>헌금</th><th>성경봉독</th><th>주요 행사</th>" +
+      (editing ? '<th class="editcol no-print"></th>' : "") + "</tr></thead><tbody>" +
+      (J.servers || []).map(function (r, ri) {
         var now = isThisSunday(r[0], J);
-        return '<tr' + (now ? ' class="now"' : "") + ">" + r.map(function (c) {
-          return "<td>" + (blank(c) ? "" : t(c)) + "</td>";
-        }).join("") + "</tr>";
+        return '<tr' + (now ? ' class="now"' : "") + ">" + r.map(function (c, ci) {
+          return "<td>" + E("srv." + ri + "." + ci, c) + "</td>";
+        }).join("") + (editing ? '<td class="editcol no-print"><button type="button" class="rowdel" data-del="srv" data-i="' + ri + '">줄 삭제</button></td>' : "") + "</tr>";
       }).join("") + "</tbody></table></section>" +
       '<section class="blk welcome"><h3>새가족 환영</h3><table><thead><tr><th>번호</th><th>이름</th><th>인도자</th><th>소속</th></tr></thead><tbody>' +
-      (J.newcomers || []).map(function (r) {
+      (J.newcomers || []).map(function (r, ri) {
         return "<tr>" + [0, 1, 2, 3].map(function (i) {
-          return "<td>" + (blank(r[i]) ? '<span class="empty">—</span>' : t(r[i])) + "</td>";
+          return "<td>" + (!editing && blank(r[i]) ? '<span class="empty">—</span>' : E("newc." + ri + "." + i, r[i] || "")) + "</td>";
         }).join("") + "</tr>";
       }).join("") + "</tbody></table></section>" +
       folio(3) + "</div></section>";
@@ -255,42 +423,312 @@
       '<div class="sheet-in">' +
       head("04", "안내", meta) +
       '<section class="blk offer"><h3>지난 주 헌금</h3><div class="olist">' +
-      (J.offerings || []).map(function (o) {
-        return "<div><dt>" + t(o[0]) + "</dt><dd>" + (blank(o[1]) ? '<span class="empty">—</span>' : t(o[1])) + "</dd></div>";
+      (J.offerings || []).map(function (o, i) {
+        return "<div><dt>" + E("off." + i + ".0", o[0]) + "</dt><dd>" +
+          (!editing && blank(o[1]) ? '<span class="empty">—</span>' : E("off." + i + ".1", o[1] || "")) + "</dd></div>";
       }).join("") +
       (J.youth && J.youth.length ? '<div class="youth"><dt>청소년부</dt><dd>' +
-        J.youth.map(function (y) {
-          return "<span><i>" + t(y[0]) + "</i> " + (blank(y[1]) ? '<span class="empty">—</span>' : t(y[1])) + "</span>";
+        J.youth.map(function (y, i) {
+          return "<span><i>" + E("youth." + i + ".0", y[0]) + "</i> " +
+            (!editing && blank(y[1]) ? '<span class="empty">—</span>' : E("youth." + i + ".1", y[1] || "")) + "</span>";
         }).join("") + "</dd></div>" : "") +
       "</div></section>" +
       '<div class="split">' +
       '<section class="blk"><h3>예배 시간</h3><ul class="times">' +
-      (C.services || []).map(function (s) {
-        return "<li><span>" + t(s[0]) + "</span><b>" + t(s[1]) + "</b></li>";
+      (C.services || []).map(function (s, i) {
+        return "<li><span>" + E("ch.svc." + i + ".0", s[0]) + "</span><b>" + E("ch.svc." + i + ".1", s[1]) + "</b></li>";
       }).join("") + "</ul></section>" +
       '<section class="blk"><h3>주중 모임</h3><ul class="times meet">' +
-      (C.weekday || []).map(function (w) {
-        return "<li><span>" + t(w.name) + "</span><b>" + t(w.time) + "</b><small>인도 " + t(w.leader) + "</small></li>";
+      (C.weekday || []).map(function (w, i) {
+        return "<li><span>" + E("ch.wd." + i + ".name", w.name) + "</span><b>" + E("ch.wd." + i + ".time", w.time) + "</b><small>인도 " + E("ch.wd." + i + ".leader", w.leader) + "</small></li>";
       }).join("") + "</ul></section></div>" +
       '<section class="blk vision"><h3>교회 비전</h3><div class="vgrid">' +
-      (C.vision || []).map(function (v) {
-        return "<article><h4>" + t(v.title) + '</h4><p class="verse">' + t(v.verse) + "</p><p>" + t(v.desc) + "</p></article>";
+      (C.vision || []).map(function (v, i) {
+        return "<article><h4>" + E("ch.vis." + i + ".title", v.title) + '</h4><p class="verse">' + E("ch.vis." + i + ".verse", v.verse) + "</p><p>" + E("ch.vis." + i + ".desc", v.desc) + "</p></article>";
       }).join("") + "</div></section>" +
       '<section class="blk visit"><h3>오시는 길 · 연락처</h3><div class="vtwo">' +
-      '<p class="addr">' + (C.address || []).map(t).join("<br>") + "</p>" +
-      "<ul><li><span>전화</span><b>" + esc(C.tel) + "</b></li><li><span>이메일</span><b>" + esc(C.email) + "</b></li>" +
-      (C.pastors || []).map(function (p) {
-        return "<li><span>" + esc(p[0]) + "</span><b>" + esc(p[1]) + "</b></li>";
+      '<p class="addr">' + E("ch.addr", (C.address || []).join("\n")) + "</p>" +
+      "<ul><li><span>전화</span><b>" + E("ch.tel", C.tel) + "</b></li><li><span>이메일</span><b>" + E("ch.email", C.email) + "</b></li>" +
+      (C.pastors || []).map(function (p, i) {
+        return "<li><span>" + E("ch.pastor." + i + ".0", p[0]) + "</span><b>" + E("ch.pastor." + i + ".1", p[1]) + "</b></li>";
       }).join("") + "</ul></div>" +
-      (C.invitation ? '<p class="invite">' + t(C.invitation) + "</p>" : "") +
+      (C.invitation ? '<p class="invite">' + E("ch.invite", C.invitation) + "</p>" : "") +
       "</section>" +
       folio(4) + "</div></section>";
 
     document.getElementById("book").innerHTML = cover + page2 + page3 + page4;
     applyMode();
+    if (editing) fitWidth();
   }
 
-  if (q.get("draft") === "1") {
+  function buildEditbar(weekId) {
+    document.getElementById("tools").hidden = true;
+    document.getElementById("guide").hidden = true;
+    var bar = document.getElementById("editbar");
+    bar.hidden = false;
+    var weeks = (window.JUBO_WEEKS || []).slice();
+    if (weekId && weeks.indexOf(weekId) < 0) weeks.unshift(weekId);
+    var opts = weeks.map(function (w) {
+      return '<option value="' + esc(w) + '"' + (w === weekId ? " selected" : "") + ">" + esc(w) + "</option>";
+    }).join("");
+    var tokenNote = "";
+    try { tokenNote = localStorage.getItem(TOKEN) ? "이 휴대폰에 토큰이 있습니다." : ""; } catch (e) {}
+    bar.innerHTML =
+      '<div class="edit-row"><select id="edit-week" aria-label="주보 날짜">' + opts + "</select>" +
+      '<button type="button" id="edit-new" class="grow">새 주보 만들기</button>' +
+      '<button type="button" id="edit-save" class="primary grow">저장</button>' +
+      '<button type="button" id="edit-reset">처음대로</button></div>' +
+      '<div class="edit-row" style="margin-top:8px">' +
+      '<button type="button" id="edit-fold" class="printy grow">접는 주보 인쇄</button>' +
+      '<button type="button" id="edit-single" class="printy grow">한 장씩 인쇄</button></div>' +
+      '<p class="edit-hint">글자를 누르면 바로 고칩니다. 글자가 작으면 두 손가락으로 키우세요.</p>' +
+      '<p class="edit-status" id="edit-status" role="status"></p>' +
+      '<div class="tokenbox" id="tokenbox" hidden><p id="token-note">' + esc(tokenNote) + "</p>" +
+      "<p>홈페이지에 올리려면 깃허브 토큰을 넣어 주세요. 토큰은 이 휴대폰에만 남습니다.</p>" +
+      '<input id="edit-token" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_...">' +
+      '<div class="edit-row" style="margin-top:8px"><button type="button" id="token-go" class="primary">토큰으로 올리기</button>' +
+      '<button type="button" id="file-go">파일로 내려받기</button></div></div>' +
+      '<a class="quiet" href="edit.html?week=' + encodeURIComponent(weekId || "") + '">칸으로 고치기</a>';
+  }
+  function ensureWeekOption(id) {
+    var sel = document.getElementById("edit-week");
+    if (!sel || !id) return;
+    var found = false;
+    [].forEach.call(sel.options, function (o) { if (o.value === id) found = true; });
+    if (!found) {
+      var opt = document.createElement("option");
+      opt.value = id;
+      opt.textContent = id;
+      sel.insertBefore(opt, sel.firstChild);
+    }
+    sel.value = id;
+  }
+  function syncDate(src) {
+    var d = parseLoose(plain(src));
+    if (!d) return;
+    document.querySelectorAll('.ed[data-k="date"]').forEach(function (el) { if (el !== src) el.textContent = d.dot; });
+    document.querySelectorAll('.ed[data-k="when"]').forEach(function (el) {
+      if (el !== src) el.textContent = d.y + "년 " + d.m + "월 " + d.d + "일";
+    });
+    document.querySelectorAll('.ed[data-k="month"]').forEach(function (el) { if (el !== src) el.textContent = String(d.m); });
+    var dow = document.getElementById("dow-label");
+    if (dow) {
+      var name = "일월화수목금토"[new Date(d.y, d.m - 1, d.d).getDay()];
+      dow.textContent = name === "일" ? "주일" : name + "요일";
+    }
+  }
+  function addRow(kind) {
+    harvest();
+    if (kind === "news") viewJ.news.push("");
+    if (kind === "srv") viewJ.servers.push(["", "", "", "", "", ""]);
+    render(viewC, viewJ, dotToIso(viewJ.date));
+    scheduleSave();
+  }
+  function delRow(kind, i) {
+    harvest();
+    if (kind === "news" && viewJ.news.length > 1) viewJ.news.splice(i, 1);
+    if (kind === "srv" && viewJ.servers.length > 1) viewJ.servers.splice(i, 1);
+    render(viewC, viewJ, dotToIso(viewJ.date));
+    scheduleSave();
+  }
+  function makeNew() {
+    harvest();
+    var iso = dotToIso(viewJ.date);
+    if (!iso) { setEditStatus("날짜를 2026년 10월 18일 처럼 적어 주세요."); return; }
+    var next = addDays(iso, 7);
+    var p = parseLoose(next);
+    viewJ.date = p.dot;
+    viewJ.month = String(p.m);
+    viewJ.issue = bumpIssue(viewJ.issue, next);
+    ensureWeekOption(next);
+    render(viewC, viewJ, next);
+    scheduleSave();
+    setEditStatus("지난 주보를 복사했습니다. 날짜는 7일 뒤, 호수는 하나 올렸습니다.");
+  }
+  function resetDraft() {
+    var all = drafts();
+    delete all[week];
+    if (viewJ) delete all[dotToIso(viewJ.date)];
+    localStorage.setItem(DRAFTS, JSON.stringify(all));
+    location.href = "print.html?edit=1&week=" + encodeURIComponent(week);
+  }
+  function weekFile(J) {
+    return "// ===== " + (J.date || "") + " (" + (J.issue || "") + ") 주보 데이터 =====\n" +
+      "window.JUBO = " + JSON.stringify(J, null, 2) + ";\n";
+  }
+  function churchFile(C) {
+    return "// 교회 고정 정보 (자주 바뀌지 않는 내용)\nwindow.CHURCH = " + JSON.stringify(C, null, 2) + ";\n";
+  }
+  function currentFile(id) {
+    var list = (window.JUBO_WEEKS || []).slice();
+    if (list.indexOf(id) < 0) list.push(id);
+    var seen = {};
+    list = list.filter(function (w) { if (seen[w]) return false; seen[w] = true; return true; });
+    list.sort().reverse();
+    return "// 기본으로 보여줄 주보 날짜 (매주 이 값만 바꾸면 됩니다)\n" +
+      "window.JUBO_CURRENT = " + JSON.stringify(list[0]) + ";\n" +
+      "window.JUBO_WEEKS = " + JSON.stringify(list) + ";\n";
+  }
+  function download(name, text) {
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([text], { type: "text/javascript;charset=utf-8" }));
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+  function downloadFiles() {
+    var iso = dotToIso(viewJ.date);
+    if (!iso) return;
+    download(iso + ".js", weekFile(viewJ));
+    setTimeout(function () { download("current.js", currentFile(iso)); }, 400);
+  }
+  function tokenValue() {
+    var input = document.getElementById("edit-token");
+    var typed = input && input.value.trim();
+    if (typed) {
+      localStorage.setItem(TOKEN, typed);
+      input.value = "";
+      var note = document.getElementById("token-note");
+      if (note) note.textContent = "이 휴대폰에 토큰이 있습니다.";
+    }
+    return localStorage.getItem(TOKEN) || "";
+  }
+  function toB64(text) {
+    var bytes = new TextEncoder().encode(text);
+    var bin = "";
+    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin);
+  }
+  function ghMessage(res) {
+    if (res.status === 401) return "토큰이 맞지 않습니다. 다시 확인해 주세요.";
+    if (res.status === 403 || res.status === 404) return "이 토큰으로는 저장할 수 없습니다. hanmaum-jubo 만 허용하고, Contents 를 Read and write 로 만들어 주세요.";
+    if (res.status === 409) return "다른 수정이 먼저 저장되었습니다. 한 번 더 눌러 주세요.";
+    return "저장하지 못했습니다. 잠시 후 다시 눌러 주세요.";
+  }
+  function ghPut(path, text, message, token) {
+    var url = "https://api.github.com/repos/" + REPO + "/contents/" + path;
+    var headers = {
+      "Authorization": "Bearer " + token,
+      "Accept": "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
+      "Content-Type": "application/json"
+    };
+    return fetch(url + "?ref=main", { headers: headers }).then(function (res) {
+      if (res.status === 401 || res.status === 403) throw new Error(ghMessage(res));
+      var shaPromise = res.status === 200 ? res.json().then(function (data) { return data.sha; }) : Promise.resolve(null);
+      if (res.status !== 200 && res.status !== 404) throw new Error(ghMessage(res));
+      return shaPromise;
+    }).then(function (sha) {
+      var body = { message: message, content: toB64(text), branch: "main" };
+      if (sha) body.sha = sha;
+      return fetch(url, { method: "PUT", headers: headers, body: JSON.stringify(body) });
+    }).then(function (res) {
+      if (!res.ok) throw new Error(ghMessage(res));
+      return res.json();
+    });
+  }
+  function saveAll() {
+    harvest();
+    var iso = dotToIso(viewJ.date);
+    if (!iso) { setEditStatus("날짜를 2026년 10월 18일 처럼 적어 주세요."); return; }
+    writeDraft(viewJ, viewC);
+    downloadFiles();
+    var token = tokenValue();
+    var box = document.getElementById("tokenbox");
+    if (!token) {
+      if (box) box.hidden = false;
+      setEditStatus("이 휴대폰에 저장하고 파일을 내려받았습니다. 홈페이지에 올리려면 토큰을 넣어 주세요.");
+      return;
+    }
+    var btn = document.getElementById("edit-save");
+    if (btn) btn.disabled = true;
+    setEditStatus("깃허브에 올리는 중입니다. 잠시만 기다려 주세요.");
+    var message = "주보 " + viewJ.date + " 수정";
+    var jobs = [
+      ghPut("data/" + iso + ".js", weekFile(viewJ), message, token),
+      ghPut("data/current.js", currentFile(iso), message, token)
+    ];
+    if (fileChurch && JSON.stringify(viewC) !== JSON.stringify(fileChurch)) jobs.push(ghPut("data/church.js", churchFile(viewC), message, token));
+    Promise.all(jobs).then(function () {
+      setEditStatus("깃허브에 저장했습니다. 1~2분 뒤 홈페이지에 나타납니다.");
+    }).catch(function (err) {
+      setEditStatus(err && err.message ? err.message : "인터넷 연결을 확인해 주세요.");
+    }).then(function () { if (btn) btn.disabled = false; });
+  }
+  function printAs(next) {
+    harvest();
+    mode = next;
+    applyMode();
+    fitWidth();
+    setTimeout(function () { window.print(); }, 80);
+  }
+  document.addEventListener("input", function (e) {
+    var el = e.target.closest && e.target.closest(".ed");
+    if (!el) return;
+    var key = el.getAttribute("data-k");
+    document.querySelectorAll(".ed").forEach(function (other) {
+      if (other !== el && other.getAttribute("data-k") === key) other.textContent = el.textContent;
+    });
+    if (key === "date" || key === "when") syncDate(el);
+    scheduleSave();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Enter") return;
+    var el = e.target.closest && e.target.closest(".ed");
+    if (!el) return;
+    var key = el.getAttribute("data-k") || "";
+    var multi = key.indexOf("news.") === 0 || key === "praise" || key === "ch.addr" || key === "ch.invite";
+    if (!multi) e.preventDefault();
+  });
+  document.addEventListener("focusin", function (e) {
+    var el = e.target && e.target.closest ? e.target.closest(".ed") : null;
+    if (!el) return;
+    document.querySelectorAll(".ed.on").forEach(function (n) { if (n !== el) n.classList.remove("on"); });
+    el.classList.add("on");
+  });
+  document.addEventListener("focusout", function (e) {
+    var el = e.target && e.target.classList && e.target.classList.contains("ed") ? e.target : null;
+    if (el) el.classList.remove("on");
+  });
+  document.addEventListener("paste", function (e) {
+    var el = e.target.closest && e.target.closest(".ed");
+    if (!el) return;
+    e.preventDefault();
+    var text = (e.clipboardData || window.clipboardData).getData("text");
+    document.execCommand("insertText", false, text);
+  });
+  document.addEventListener("click", function (e) {
+    var btn = e.target.closest && e.target.closest("button");
+    if (!btn || !editing) return;
+    if (btn.id === "edit-new") return makeNew();
+    if (btn.id === "edit-save" || btn.id === "token-go") return saveAll();
+    if (btn.id === "edit-reset") return resetDraft();
+    if (btn.id === "edit-fold") return printAs("booklet");
+    if (btn.id === "edit-single") return printAs("single");
+    if (btn.id === "file-go") { harvest(); downloadFiles(); setEditStatus("파일을 내려받았습니다."); return; }
+    if (btn.getAttribute("data-add")) return addRow(btn.getAttribute("data-add"));
+    if (btn.getAttribute("data-del")) return delRow(btn.getAttribute("data-del"), Number(btn.getAttribute("data-i")));
+  });
+  document.addEventListener("change", function (e) {
+    if (!editing || e.target.id !== "edit-week") return;
+    try { harvest(); writeDraft(viewJ, viewC); } catch (err) {}
+    location.href = "print.html?edit=1&week=" + encodeURIComponent(e.target.value);
+  });
+  window.addEventListener("resize", function () { if (editing) fitWidth(); });
+  window.addEventListener("beforeprint", function () {
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    var book = document.getElementById("book");
+    if (book) { book.style.transform = "none"; book.style.marginLeft = "0px"; book.style.marginBottom = "0px"; }
+  });
+  window.addEventListener("afterprint", function () {
+    if (!editing) return;
+    if (mode !== "single") { mode = "single"; applyMode(); }
+    fitWidth();
+  });
+
+  fileChurch = clone(window.CHURCH);
+  if (q.get("draft") === "1" && !editing) {
     var pack = null;
     try { pack = JSON.parse(localStorage.getItem("hmj-preview") || ""); } catch (e) {}
     if (!pack || !pack.jubo) {
@@ -311,11 +749,24 @@
     document.getElementById("book").innerHTML = '<p class="err">주보 날짜를 찾을 수 없습니다.</p>';
     return;
   }
+  function showLoaded(J) {
+    if (editing) {
+      var draft = drafts()[week];
+      if (draft && draft.jubo) {
+        render(draft.church || window.CHURCH, draft.jubo, week);
+        setEditStatus("이 휴대폰에 남겨 둔 수정을 불러왔습니다.");
+        return;
+      }
+    }
+    render(window.CHURCH, J, week);
+  }
   var s = document.createElement("script");
   s.src = "data/" + week + ".js";
-  s.onload = function () { render(window.CHURCH, window.JUBO, week); };
+  s.onload = function () { showLoaded(window.JUBO); };
   s.onerror = function () {
-    document.getElementById("book").innerHTML = '<p class="err">' + week + " 주보 파일을 찾을 수 없습니다.</p>";
+    var draft = editing ? drafts()[week] : null;
+    if (draft && draft.jubo) showLoaded(draft.jubo);
+    else document.getElementById("book").innerHTML = '<p class="err">' + week + " 주보 파일을 찾을 수 없습니다.</p>";
   };
   document.head.appendChild(s);
 })();
