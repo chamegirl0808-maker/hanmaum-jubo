@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="20 0 935 812" class="map">
+  <style>
+    .blk{fill:#FFFDF9;stroke:none}
+    .ln{stroke:#4A5470;stroke-width:3.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+    .lt{stroke:#B9B2A8;stroke-width:1.6;fill:none;stroke-dasharray:0}
+    .t{font-family:'Pretendard',sans-serif;font-weight:600;font-size:26px;letter-spacing:0.6px;fill:#2E3A59}
+    .b{fill:#3B5BA5}
+    .s{font-size:17px;font-weight:500;fill:#5A5F70}
+    .road{font-family:'Pretendard',sans-serif;font-weight:700;font-size:24px;fill:#2E3A59;text-anchor:middle}
+  </style>
+  <!-- block fills -->
+  <rect class="blk" x="90" y="128" width="340" height="167" rx="10"/>
+  <rect class="blk" x="90" y="388" width="340" height="424"/>
+  <rect class="blk" x="543" y="125" width="345" height="165" rx="10"/>
+  <rect class="blk" x="545" y="380" width="345" height="348"/>
+  <rect class="blk" x="545" y="763" width="350" height="49"/>
+  <!-- top -->
+  <path class="ln" d="M92 12 V58 H430"/>
+  <path class="ln" d="M543 50 H880 V12"/>
+  <text class="t" x="437" y="45" style="font-size:21px">Meralco</text>
+  <text class="t" x="612" y="40">Medical City</text>
+  <text class="t" x="110" y="105">← Green Hills</text>
+  <text class="t b" x="618" y="96">Ortigas Ave</text>
+  <!-- Robinson block -->
+  <rect class="ln" x="90" y="128" width="340" height="167" rx="6"/>
+  <path class="lt" d="M316 128 V215 M90 215 H316 M148 215 V295"/>
+  <text class="t" x="107" y="162">Robinson Gr</text>
+  <text class="t" x="165" y="208" letter-spacing="5">ADB</text>
+  <text class="t" x="105" y="265">A</text>
+  <text class="t" x="332" y="250" style="font-size:21px">Shell</text>
+  <text class="t" x="332" y="273" style="font-size:21px">station</text>
+  <text class="t" x="105" y="336">Mega</text>
+  <text class="t" x="105" y="372">Mall</text>
+  <!-- left lower blocks -->
+  <path class="ln" d="M90 812 V388 H430 V466 H205"/>
+  <path class="lt" d="M148 388 V510 M90 510 H148"/>
+  <text class="t" x="105" y="458">B</text>
+  <text class="t" x="218" y="455">Regency Hotel</text>
+  <path class="ln" d="M205 508 H430 V812"/>
+  <text class="t" x="103" y="596">Sangrila</text>
+  <text class="t" x="103" y="626">Hotel</text>
+  <text class="t" x="307" y="593" style="font-size:21px">Alexander</text>
+  <text class="t" x="307" y="627" style="font-size:21px">Con.</text>
+  <text class="t s" x="103" y="758">2f Bramante Piazza ClubHouse</text>
+  <text class="t s" x="103" y="786">Brgy Ugong Ortigas Center</text>
+  <!-- EDSA -->
+  <g class="road"><text x="33" y="250">E</text><text x="33" y="328">D</text><text x="33" y="422">S</text><text x="33" y="500">A</text></g>
+  <!-- Meralco Ave -->
+  <g class="road" style="fill:#3B5BA5;font-size:21px">
+    <text x="486" y="246">M</text><text x="486" y="285">e</text><text x="486" y="323">r</text><text x="486" y="368">a</text><text x="486" y="417">l</text><text x="486" y="462">c</text><text x="486" y="498">o</text>
+    <text x="486" y="580">A</text><text x="486" y="619">v</text><text x="486" y="657">e</text>
+  </g>
+  <path d="M514 525 H538" stroke="#4A5470" stroke-width="2"/>
+  <!-- right blocks -->
+  <rect class="ln" x="543" y="125" width="345" height="165" rx="6"/>
+  <text class="t" x="793" y="148" letter-spacing="5">CCF</text>
+  <text class="t" x="560" y="238">Home Depot</text>
+  <text class="road" x="935" y="272">C</text>
+  <text class="road" x="937" y="360">5</text>
+  <text class="t b" x="710" y="345" text-anchor="middle">← Julia Vargas →</text>
+  <path class="ln" d="M545 505 V380 H890 V728 H545 V543 H665"/>
+  <path class="ln" d="M545 503 H665"/>
+  <path class="lt" d="M665 543 V690"/>
+  <text class="t" x="592" y="415">MMDA</text>
+  <!-- church marker -->
+  <g>
+    <circle cx="695" cy="448" r="30" fill="#E58F73" opacity="0.22"/>
+    <path d="M695 404 l-14 18 h8 v8 h12 v-8 h8 z" fill="#E07A5F"/>
+    <rect x="671" y="425" width="48" height="48" rx="9" fill="#E07A5F"/>
+  </g>
+  <text class="t" x="730" y="510" style="fill:#B4566B;font-weight:700">한마음제자</text>
+  <text class="t" x="733" y="542" style="fill:#B4566B;font-weight:500">Hanmaum</text>
+  <text class="t" x="563" y="630">Ayala</text>
+  <text class="t" x="565" y="667">30th</text>
+  <text class="t" x="683" y="625">Renaissance</text>
+  <text class="t" x="683" y="659">Condominium</text>
+  <text class="t" x="683" y="720">Saint PAUL</text>
+  <text class="t" x="472" y="793" style="font-weight:700">EASTANCIA</text>
+  <path class="ln" d="M545 763 H895 V812"/>
+</svg>
