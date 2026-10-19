@@ -350,7 +350,7 @@
 
     var cover =
       '<section class="sheet p1"><span class="folio">1</span>' +
-      '<div class="blob r"></div><div class="blob l"></div>' +
+      '<div class="blob t"></div><div class="blob r"></div><div class="blob l"></div>' +
       '<div class="inner">' +
       '<div class="date">' + E("when", when) +
       ((J.season || editing) ? '<span class="sep">·</span>' + E("season", J.season || "") : "") + "</div>" +
