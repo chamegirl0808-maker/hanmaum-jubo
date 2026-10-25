@@ -469,11 +469,13 @@
           '</div><span class="tm">( ' + E("ch.wd." + i + ".time", w.time) + ' )</span><div class="ld">인도 : ' +
           E("ch.wd." + i + ".leader", w.leader) + "</div></div>";
       }).join("") + "</div>" +
-      '<div class="lower"><div class="card times"><span class="pill"><span class="dot"></span>예배시간 안내</span><table><tr><th style="text-align:left">구분</th><th style="text-align:right">시간</th></tr>' +
+      '<div class="lower"><div class="card times"><span class="pill"><span class="dot"></span>예배시간 안내</span><div class="tlist">' +
       (C.services || []).map(function (s, i) {
-        return "<tr><td>" + E("ch.svc." + i + ".0", s[0]) + "</td><td>" + E("ch.svc." + i + ".1", s[1]) + "</td></tr>";
-      }).join("") + "</table></div>" +
-      '<div class="card mapcard"><span class="pill"><span class="dot"></span>교회 찾아오시는 길</span>' + map + "</div></div>" +
+        var head = i === 0 ? '<div class="gl">주일</div>' : (i === 1 ? '<div class="gl">주중</div>' : "");
+        return head + '<div class="trow' + (i === 0 ? " sun" : "") + '"><span class="tn">' + E("ch.svc." + i + ".0", s[0]) +
+          '</span><span class="tt">' + E("ch.svc." + i + ".1", s[1]) + "</span></div>";
+      }).join("") + "</div></div>" +
+      '<div class="card mapcard"><span class="pill"><span class="dot"></span>교회 찾아오시는 길</span><div class="mapframe">' + map + "</div></div></div>" +
       '<div class="closing">' + (editing ? E("ch.invite", C.invitation || "") : decorateInvite(C.invitation || "")) + "</div>" +
       "</div></section>";
 
