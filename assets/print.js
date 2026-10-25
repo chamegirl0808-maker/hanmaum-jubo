@@ -702,56 +702,86 @@
     }
     note.textContent = msg || "";
   }
+  function sheetOrder(list) {
+    return list.slice().sort(function (a, b) {
+      var fa = a.querySelector(".folio");
+      var fb = b.querySelector(".folio");
+      return (fa ? parseInt(fa.textContent, 10) : 0) - (fb ? parseInt(fb.textContent, 10) : 0);
+    });
+  }
   function bookletPdf() {
     if (editing) harvest();
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     var prev = mode;
-    mode = "booklet";
+    mode = "single";
     applyMode();
     var book = document.getElementById("book");
     var prevStyle = book.getAttribute("style");
     book.style.transform = "none";
     book.style.marginLeft = "0px";
     book.style.marginBottom = "0px";
+    document.body.classList.add("pdf-capture");
     var buttons = [].slice.call(document.querySelectorAll("#do-booklet-pdf, #edit-fold-pdf"));
     buttons.forEach(function (b) { b.disabled = true; });
     setPdfStatus("PDF를 만드는 중입니다. 잠시만 기다려 주세요.");
     function restore() {
+      document.body.classList.remove("pdf-capture");
       buttons.forEach(function (b) { b.disabled = false; });
       if (prevStyle) book.setAttribute("style", prevStyle);
       else book.removeAttribute("style");
-      if (prev !== "booklet") { mode = prev; applyMode(); }
+      if (prev !== mode) { mode = prev; applyMode(); }
       if (editing) fitWidth();
     }
-    return loadScript("https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js").then(function () {
+    var resultMsg = "";
+    var fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+    return fontsReady.then(function () {
+      return loadScript("https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js");
+    }).then(function () {
       return loadScript("https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js");
     }).then(function () {
-      return new Promise(function (resolve) { setTimeout(resolve, 60); });
-    }).then(function () {
-      var spreads = [].slice.call(document.querySelectorAll(".spread"));
-      var pdf = new window.jspdf.jsPDF({ orientation: "landscape", unit: "mm", format: "a4", compress: true });
+      var sheets = sheetOrder([].slice.call(document.querySelectorAll("#book > .sheet")));
+      if (sheets.length !== 4) throw new Error("pages");
+      var images = [];
       var chain = Promise.resolve();
-      spreads.forEach(function (spread, i) {
+      sheets.forEach(function (sheet) {
         chain = chain.then(function () {
-          return window.html2canvas(spread, {
-            scale: 2,
+          sheet.scrollIntoView({ block: "start" });
+          return window.html2canvas(sheet, {
+            scale: 3,
             backgroundColor: "#ffffff",
             useCORS: true,
-            logging: false
+            logging: false,
+            scrollX: 0,
+            scrollY: -window.scrollY
           }).then(function (canvas) {
-            if (i > 0) pdf.addPage("a4", "landscape");
-            pdf.addImage(canvas.toDataURL("image/jpeg", 0.95), "JPEG", 0, 0, 297, 210);
+            images.push(canvas.toDataURL("image/jpeg", 0.95));
           });
         });
       });
       return chain.then(function () {
+        var pdf = new window.jspdf.jsPDF({ orientation: "landscape", unit: "mm", format: "a4", compress: true });
+        var pageW = 137.5;
+        var pageH = 194.464286;
+        var mx = 5.5;
+        var my = (210 - pageH) / 2;
+        function place(index, col) {
+          pdf.addImage(images[index], "JPEG", col * 148.5 + mx, my, pageW, pageH);
+        }
+        place(3, 0);
+        place(0, 1);
+        pdf.addPage("a4", "landscape");
+        place(1, 0);
+        place(2, 1);
         var iso = (viewJ && dotToIso(viewJ.date)) || week || "jubo";
         pdf.save("jubo-booklet-" + iso + ".pdf");
-        setPdfStatus("접는 주보 PDF를 내려받았습니다. 배율 100%로 인쇄하세요.");
+        resultMsg = "접는 주보 PDF를 내려받았습니다. 배율 100%로 인쇄하세요.";
       });
     }).catch(function () {
-      setPdfStatus("PDF를 만들지 못했습니다. 접는 주보 인쇄로 저장해 주세요.");
-    }).then(restore);
+      resultMsg = "PDF를 만들지 못했습니다. 접는 주보 인쇄로 저장해 주세요.";
+    }).then(function () {
+      restore();
+      if (resultMsg) setPdfStatus(resultMsg);
+    });
   }
   function printAs(next) {
     harvest();

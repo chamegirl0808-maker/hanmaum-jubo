@@ -144,6 +144,14 @@ body.booklet .mini .sheet {
   page-break-before: auto;
   page-break-after: auto;
 }
+/* Full-size pages while the booklet PDF is captured. No zoom. */
+body.pdf-capture #book { width: 210mm; }
+body.pdf-capture .sheet {
+  margin: 0 !important;
+  box-shadow: none !important;
+  zoom: 1 !important;
+  transform: none !important;
+}
 .err { margin: 24px; }
 
 .sheet {
