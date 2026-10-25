@@ -404,14 +404,13 @@
     (J.offerings || []).forEach(function (o, i) { if (o[0] === "강단장식") altar = { o: o, i: i }; });
     var offerHtml = (J.offerings || []).map(function (o, i) {
       if (altar && i === altar.i) return "";
-      var offerEmpty = !editing && blank(o[1]) && !(altar && o[0] === "오병이어");
       var value = (!editing && blank(o[1]) ? "" : E("off." + i + ".1", o[1] || ""));
       if (altar && o[0] === "오병이어") {
         value = '<span class="split"><span>' + value + '</span><span class="alt"><b>' +
           E("off." + altar.i + ".0", altar.o[0]) + "</b> : " +
           E("off." + altar.i + ".1", altar.o[1] || "") + "</span></span>";
       }
-      return '<div class="o' + (offerEmpty ? " is-empty" : "") + '"><span class="l"><span class="ast">*</span>' + E("off." + i + ".0", o[0]) + " :</span><span class=\"v\">" + value + "</span></div>";
+      return '<div class="o"><span class="l"><span class="ast">*</span>' + E("off." + i + ".0", o[0]) + " :</span><span class=\"v\">" + value + "</span></div>";
     }).join("");
     if (J.youth && J.youth.length) {
       offerHtml += '<div class="o"><span class="l"><span class="ast">*</span>청소년부 :</span><span class="v">' +
