@@ -687,7 +687,9 @@
         return head + '<div class="trow' + (i === 0 ? " sun" : "") + '"><span class="tn">' + E("ch.svc." + i + ".0", s[0]) +
           '</span><span class="tt">' + E("ch.svc." + i + ".1", s[1]) + "</span></div>";
       }).join("") + "</div></div>" +
-      '<div class="card mapcard"><span class="pill"><span class="dot"></span>교회 찾아오시는 길</span><div class="mapframe">' + map + "</div></div></div>" +
+      '<div class="card mapcard"><span class="pill"><span class="dot"></span>교회 찾아오시는 길</span><div class="mapframe">' + map + "</div>" +
+      '<p class="mapaddr">2F Bramante Piazza Clubhouse, Renaissance Condominium,<br>Meralco Ave, Brgy Ugong, Ortigas, Pasig City' +
+      (C.tel ? '<span class="maptel">☎ ' + esc(C.tel) + "</span>" : "") + "</p></div></div>" +
       '<div class="closing">' + (editing ? E("ch.invite", C.invitation || "") : decorateInvite(C.invitation || "")) + "</div>" +
       "</div></section>";
 
