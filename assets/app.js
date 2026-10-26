@@ -133,7 +133,7 @@
 
     var hero =
       '<section class="hero" id="cover">' +
-      '<div class="hero-id"><img class="logo" src="' + esc(C.logo) + '" alt="" width="48" height="48">' +
+      '<div class="hero-id"><img class="logo" src="assets/logo-cover.png" alt="" width="48" height="48">' +
       '<div><p class="church">' + esc(C.name) + "</p><p class=\"slogan\">" + t(C.slogan) + "</p></div></div>" +
       '<p class="issue-line"><span>' + (dow || "주일") + "</span><span>" + t(J.issue) + "</span></p>" +
       (date

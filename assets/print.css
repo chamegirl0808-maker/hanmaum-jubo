@@ -251,7 +251,6 @@ body.pdf-capture .sheet {
   width: 88mm;
   height: 88mm;
   opacity: 1;
-  filter: saturate(1.35) contrast(1.15);
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }

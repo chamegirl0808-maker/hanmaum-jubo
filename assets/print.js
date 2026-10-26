@@ -580,7 +580,7 @@
       '<div class="tag">' + E("ch.slogan", C.slogan) + "</div>" +
       '<div class="name">' + E("ch.name", C.name) + "</div>" +
       '<div class="rule"><i></i><b></b><i></i></div>' +
-      '<div class="logo-wrap"><img src="' + esc(C.logo || "assets/logo.png") + '" alt=""></div>' +
+      '<div class="logo-wrap"><img src="assets/logo-cover.png" alt=""></div>' +
       '<div class="confess">' +
       (C.motto || []).map(function (m, i) {
         return (i ? "<br>" : "") + E("ch.motto." + i + ".0", m[0]) + "<em>" + E("ch.motto." + i + ".1", m[1]) + "</em>" + E("ch.motto." + i + ".2", m[2]);

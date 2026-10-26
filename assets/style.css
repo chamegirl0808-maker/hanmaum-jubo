@@ -120,7 +120,7 @@ a { color: inherit; }
 .hero, .block { scroll-margin-top: 116px; }
 .hero { padding: 28px 4px 12px; }
 .hero-id { display: flex; align-items: center; gap: 12px; }
-.hero .logo { width: 48px; height: 48px; opacity: 1; filter: saturate(1.35) contrast(1.15); }
+.hero .logo { width: 48px; height: 48px; opacity: 1; }
 .church { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: -0.03em; color: #1b2747; }
 .slogan { margin: 2px 0 0; color: var(--soft); font-size: 14px; }
 .issue-line { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 36px 0 0; color: var(--clay); font-size: 14px; font-weight: 600; }
