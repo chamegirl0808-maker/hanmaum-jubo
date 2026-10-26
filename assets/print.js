@@ -245,10 +245,15 @@
     history.replaceState(null, "", location.pathname + location.search);
   }
   function syncRoleNote() {
-    var note = document.getElementById("roles-note");
-    if (!note) return;
     var n = roleCount();
-    note.textContent = n ? "직분표 " + n + "명 저장됨" : "직분표 없음";
+    var note = document.getElementById("roles-note");
+    var detail = document.getElementById("roles-detail");
+    var full = n ? "직분표 " + n + "명 저장됨" : "직분표 없음";
+    if (note) {
+      note.textContent = n ? "직분 " + n : "직분 없음";
+      note.title = full;
+    }
+    if (detail) detail.textContent = full;
   }
   function isRoleTitle(tok) {
     return ROLE_TITLES.indexOf(tok) >= 0;
@@ -351,27 +356,26 @@
       } catch (e) { setEditStatus("임시 저장을 하지 못했습니다."); }
     }, 400);
   }
+  function sheetZoom(value) {
+    var book = document.getElementById("book");
+    if (!book) return;
+    [].forEach.call(book.querySelectorAll(".sheet"), function (s) { s.style.zoom = value; });
+  }
   function fitWidth() {
     var book = document.getElementById("book");
     if (!book) return;
-    if (!editing) {
-      book.style.transform = "";
-      book.style.marginLeft = "";
-      book.style.marginBottom = "";
-      return;
-    }
-    book.style.transform = "none";
-    book.style.marginLeft = "0px";
-    book.style.marginBottom = "0px";
-    var target = book.querySelector(".spread") || book.querySelector(".sheet");
+    book.style.transform = "";
+    book.style.marginLeft = "";
+    book.style.marginBottom = "";
+    if (!editing) { sheetZoom(""); return; }
+    sheetZoom("1");
+    var target = book.querySelector(".sheet");
     if (!target) return;
     var natural = target.getBoundingClientRect().width;
-    var vw = document.documentElement.clientWidth;
-    var scale = Math.min(1, (vw - 16) / natural);
-    book.style.transformOrigin = "top left";
-    book.style.marginLeft = Math.max(8, (vw - natural * scale) / 2) + "px";
-    book.style.transform = "scale(" + scale + ")";
-    book.style.marginBottom = (-book.offsetHeight * (1 - scale)) + "px";
+    if (!natural) return;
+    var side = 2;
+    var scale = (document.documentElement.clientWidth - side * 2) / natural;
+    sheetZoom(String(scale));
   }
 
   function renderChrome(week) {
@@ -695,30 +699,35 @@
     var tokenNote = "";
     try { tokenNote = localStorage.getItem(TOKEN) ? "이 휴대폰에 토큰이 있습니다." : ""; } catch (e) {}
     bar.innerHTML =
-      '<div class="edit-row"><select id="edit-week" aria-label="주보 날짜">' + opts + "</select>" +
-      '<button type="button" id="edit-new" class="grow">새 주보 만들기</button>' +
-      '<button type="button" id="edit-save" class="primary grow">저장</button>' +
-      '<button type="button" id="edit-reset">처음대로</button></div>' +
-      '<div class="edit-row" style="margin-top:8px">' +
-      '<button type="button" id="edit-fold" class="printy grow">접는 주보 인쇄</button>' +
-      '<button type="button" id="edit-fold-pdf" class="printy grow">접는 주보 PDF 받기</button>' +
-      '<button type="button" id="edit-single" class="printy grow">한 장씩 인쇄</button></div>' +
-      '<p class="edit-hint">글자를 누르면 바로 고칩니다. 글자가 작으면 두 손가락으로 키우세요.</p>' +
-      '<p class="edit-hint no-print" id="roles-note">' + (roleCount() ? "직분표 " + roleCount() + "명 저장됨" : "직분표 없음") + "</p>" +
-      '<div class="edit-row no-print"><button type="button" id="roles-open">직분표 불러오기</button></div>' +
+      '<div class="edit-row">' +
+      '<select id="edit-week" aria-label="주보 날짜">' + opts + "</select>" +
+      '<button type="button" id="edit-save" class="primary">저장</button>' +
+      '<button type="button" id="edit-more" aria-expanded="false">더보기</button>' +
+      '<span class="roles-chip" id="roles-note"></span></div>' +
+      '<div id="edit-more-box" hidden>' +
+      '<div class="edit-row">' +
+      '<button type="button" id="edit-new">새 주보</button>' +
+      '<button type="button" id="edit-reset">처음대로</button>' +
+      '<button type="button" id="edit-fold" class="printy">접어 인쇄</button>' +
+      '<button type="button" id="edit-fold-pdf" class="printy">접는 PDF</button>' +
+      '<button type="button" id="edit-single" class="printy">한 장 인쇄</button>' +
+      '<button type="button" id="roles-open">직분표</button>' +
+      '<a class="quiet" href="edit.html?week=' + encodeURIComponent(weekId || "") + '">칸으로 고치기</a></div>' +
+      '<p class="edit-hint">글자를 누르면 바로 고칩니다.</p>' +
+      '<p class="edit-hint" id="roles-detail"></p>' +
+      '<p class="print-note">인쇄: A4, 접는 주보는 가로·양면 짧은 쪽, 여백 없음, 배율 100%, 배경 그래픽 켜기</p></div>' +
+      '<p class="edit-status" id="edit-status" role="status"></p>' +
       '<div class="tokenbox no-print" id="roles-box" hidden>' +
       '<p>이름,직분 을 한 줄에 하나씩 붙여 넣거나, CSV 파일을 고르세요. 이 목록은 이 휴대폰에만 남습니다.</p>' +
-      '<textarea id="roles-text" rows="6" spellcheck="false" placeholder="이름,직분"></textarea>' +
+      '<textarea id="roles-text" rows="4" spellcheck="false" placeholder="이름,직분"></textarea>' +
       '<input id="roles-file" type="file" accept=".csv,text/csv,text/plain">' +
-      '<div class="edit-row" style="margin-top:8px"><button type="button" id="roles-save" class="primary">이 목록 저장</button></div></div>' +
-      '<p class="print-note no-print">인쇄 설정: 용지 A4, 방향 가로, 여백 없음(또는 기본), 배율 100%, 양면 짧은 쪽 넘기기, 배경 그래픽 켜기</p>' +
-      '<p class="edit-status" id="edit-status" role="status"></p>' +
+      '<div class="edit-row" style="margin-top:6px"><button type="button" id="roles-save" class="primary">이 목록 저장</button></div></div>' +
       '<div class="tokenbox" id="tokenbox" hidden><p id="token-note">' + esc(tokenNote) + "</p>" +
       "<p>홈페이지에 올리려면 깃허브 토큰을 넣어 주세요. 토큰은 이 휴대폰에만 남습니다.</p>" +
       '<input id="edit-token" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_...">' +
-      '<div class="edit-row" style="margin-top:8px"><button type="button" id="token-go" class="primary">토큰으로 올리기</button>' +
-      '<button type="button" id="file-go">파일로 내려받기</button></div></div>' +
-      '<a class="quiet" href="edit.html?week=' + encodeURIComponent(weekId || "") + '">칸으로 고치기</a>';
+      '<div class="edit-row" style="margin-top:6px"><button type="button" id="token-go" class="primary">토큰으로 올리기</button>' +
+      '<button type="button" id="file-go">파일로 내려받기</button></div></div>';
+    syncRoleNote();
   }
   function ensureWeekOption(id) {
     var sel = document.getElementById("edit-week");
@@ -927,6 +936,7 @@
     book.style.transform = "none";
     book.style.marginLeft = "0px";
     book.style.marginBottom = "0px";
+    sheetZoom("");
     document.body.classList.add("pdf-capture");
     var buttons = [].slice.call(document.querySelectorAll("#do-booklet-pdf, #edit-fold-pdf"));
     buttons.forEach(function (b) { b.disabled = true; });
@@ -1053,6 +1063,13 @@
     if (btn.id === "edit-fold-pdf") return bookletPdf();
     if (btn.id === "edit-single") return printAs("single");
     if (btn.id === "file-go") { harvest(); downloadFiles(); setEditStatus("파일을 내려받았습니다."); return; }
+    if (btn.id === "edit-more") {
+      var more = document.getElementById("edit-more-box");
+      if (!more) return;
+      more.hidden = !more.hidden;
+      btn.setAttribute("aria-expanded", more.hidden ? "false" : "true");
+      return;
+    }
     if (btn.id === "roles-open") {
       var box = document.getElementById("roles-box");
       if (box) box.hidden = !box.hidden;
@@ -1095,6 +1112,7 @@
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     var book = document.getElementById("book");
     if (book) { book.style.transform = "none"; book.style.marginLeft = "0px"; book.style.marginBottom = "0px"; }
+    sheetZoom("");
   });
   window.addEventListener("afterprint", function () {
     var book = document.getElementById("book");

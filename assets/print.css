@@ -43,7 +43,8 @@ mark.ph {
 .tools[hidden],
 .guide[hidden],
 .editbar[hidden],
-.tokenbox[hidden] { display: none !important; }
+.tokenbox[hidden],
+#edit-more-box[hidden] { display: none !important; }
 .tools {
   position: sticky;
   top: 0;
@@ -544,6 +545,8 @@ body.editing .p3 .offer .o { padding: 0.1mm 0; line-height: 1.25; }
   body:not(.booklet) { width: 210mm !important; }
   body.booklet { width: 297mm !important; }
   .no-print { display: none !important; }
+  body.editing .sheet { zoom: 1 !important; }
+  body.booklet .mini .sheet { zoom: 0.654761905 !important; }
   body:not(.booklet) .sheet {
     width: 210mm;
     height: 297mm;
@@ -604,39 +607,60 @@ body.editing .p3 .offer .o { padding: 0.1mm 0; line-height: 1.25; }
 
 body.editing { overflow-x: hidden; }
 body.editing .sheet, body.editing .spread-wrap { margin-left: 0; margin-right: 0; }
+@media screen {
+  body.editing #book { display: flex; flex-direction: column; align-items: center; }
+  body.editing .sheet { margin-top: 2px; margin-bottom: 4px; }
+}
 .editbar {
   position: sticky;
   top: 0;
   z-index: 20;
   background: rgba(255, 255, 255, .97);
   border-bottom: 1px solid var(--gold-l);
-  padding: 10px 12px 12px;
+  padding: 4px 6px;
 }
-.editbar .edit-row { display: flex; flex-wrap: wrap; gap: 8px; }
-.editbar button, .editbar select {
+.editbar .edit-row { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.editbar button, .editbar select, .editbar a.quiet {
   font: inherit;
-  font-size: 18px;
+  font-size: 13px;
   font-weight: 700;
-  min-height: 52px;
-  border-radius: 14px;
+  height: 34px;
+  min-height: 0;
+  max-height: 34px;
+  border-radius: 8px;
   border: 1px solid var(--gold-l);
   background: #fff;
   color: var(--navy);
-  padding: 8px 14px;
+  padding: 0 8px;
+  line-height: 32px;
   cursor: pointer;
+  box-sizing: border-box;
 }
-.editbar select { flex: 1 1 160px; }
-.editbar .grow { flex: 1 1 180px; }
+.editbar select { flex: 1 1 112px; width: auto; max-width: 168px; }
 .editbar .primary { background: var(--navy); color: #fff; border-color: var(--navy); }
 .editbar .printy { background: var(--coral); color: #fff; border-color: var(--coral); }
-.edit-hint { margin: 8px 0 0; font-size: 16px; color: #333; font-weight: 500; }
-.edit-status { margin: 6px 0 0; font-size: 17px; font-weight: 700; color: var(--coral); min-height: 1.2em; }
+.roles-chip { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--mute); white-space: nowrap; }
+#edit-more-box { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--line); }
+.editbar .edit-hint { margin: 4px 0 0; font-size: 12px; font-weight: 500; color: #555; line-height: 1.35; }
+.editbar .print-note {
+  margin: 4px 0 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: #555;
+  line-height: 1.35;
+}
+.edit-status:empty { display: none; }
+.edit-status { margin: 2px 0 0; font-size: 13px; font-weight: 700; color: var(--coral); min-height: 0; }
 .tokenbox { margin-top: 8px; background: #fff; border: 1px solid var(--gold-l); border-radius: 14px; padding: 12px; }
 .tokenbox p { margin: 0 0 8px; font-size: 16px; }
 .tokenbox input { width: 100%; font: inherit; font-size: 18px; min-height: 52px; border-radius: 12px; border: 1px solid var(--gold-l); padding: 8px 12px; }
 .tokenbox textarea { width: 100%; font: inherit; font-size: 16px; border-radius: 12px; border: 1px solid var(--gold-l); padding: 8px 12px; min-height: 120px; resize: vertical; }
 .tokenbox input[type="file"] { margin-top: 8px; min-height: 0; font-size: 16px; }
-.editbar a.quiet { display: inline-block; margin-top: 6px; color: var(--coral); font-weight: 700; }
+.editbar a.quiet { display: inline-block; color: var(--coral); text-decoration: none; }
 body.editing .ed { border-radius: 3px; caret-color: var(--coral); }
 body.editing .ed:focus,
 body.editing .ed.on {
