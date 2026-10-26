@@ -534,9 +534,12 @@ body.editing .p3 .offer .o { padding: 0.1mm 0; line-height: 1.25; }
   color: var(--ink);
   font-weight: 500;
 }
-.closing .c1 { color: var(--coral); font-weight: 700; }
-.closing .c2 { color: var(--navy); font-weight: 700; }
-.closing u { text-decoration-color: var(--gold); text-underline-offset: 1mm; }
+.closing .c1,
+body.editing .closing .c1 { color: var(--coral); font-weight: 700; }
+.closing .c2,
+body.editing .closing .c2 { color: var(--navy); font-weight: 700; }
+.closing u,
+body.editing .closing u { text-decoration-color: var(--gold); text-underline-offset: 1mm; }
 
 @page {
   size: A4 portrait;

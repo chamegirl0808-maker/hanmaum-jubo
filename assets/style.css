@@ -278,6 +278,9 @@ mark.ph {
 .contact span { color: var(--clay); font-size: 13px; font-weight: 650; }
 .contact a { text-underline-offset: 3px; }
 .invite { margin: 22px 0 0; padding-top: 18px; border-top: 1px solid var(--line); }
+.invite .c1 { color: #E07A5F; font-weight: 700; }
+.invite .c2 { color: #2E3A59; font-weight: 700; }
+.invite u { text-decoration-color: #C29D5F; text-underline-offset: 2px; }
 .err { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
 
 @media (max-width: 520px) {

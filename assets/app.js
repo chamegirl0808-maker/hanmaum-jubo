@@ -40,6 +40,14 @@
       return '<span class="chunk"><span class="psep" aria-hidden="true">·</span>' + span + "</span>";
     }).join("");
   }
+  function decorateInvite(text) {
+    var html = esc(text).replace(/\n/g, "<br>");
+    [["평안과 건강한 삶, 보람된 삶을 원하십니까?", "c1"], ["예수님을 만나십시오.", "c1"], ["좋은 안내자가 필요합니다.", "c2"], ["한마음제자교회", "c2"], ["의미 있고 행복한 곳", "u"]].forEach(function (b) {
+      var safe = esc(b[0]);
+      html = html.split(safe).join(b[1] === "u" ? "<u>" + safe + "</u>" : '<span class="' + b[1] + '">' + safe + "</span>");
+    });
+    return html;
+  }
 
   function parseDate(s) {
     var p = String(s || "").split(".");
@@ -260,7 +268,7 @@
         return "<li><span>" + esc(p[0]) + "</span><b>" + esc(p[1]) + "</b></li>";
       }).join("") +
       "</ul>" +
-      (C.invitation ? '<p class="invite">' + t(C.invitation) + "</p>" : "") +
+      (C.invitation ? '<p class="invite">' + decorateInvite(C.invitation) + "</p>" : "") +
       "</section>";
 
     document.getElementById("jubo").innerHTML = hero + order + sermonBlock + news + prayer + servers + welcome + offering + guide + visit;
