@@ -83,6 +83,37 @@
     if (!editing) return html;
     return '<span class="ed" data-k="' + esc(key) + '" contenteditable="true" spellcheck="false">' + html + "</span>";
   }
+  function praiseTitles(text) {
+    return String(text || "").split(/\s*[.。,，]\s*/).map(function (s) {
+      return s.replace(/\([^)]*\)/g, "").replace(/\s+/g, " ").trim();
+    }).filter(Boolean);
+  }
+  function praiseMarkup(text) {
+    return praiseTitles(text).map(function (title, i) {
+      var span = '<span class="pt">' + esc(title) + "</span>";
+      if (!i) return span;
+      return '<span class="chunk"><span class="psep" aria-hidden="true">·</span>' + span + "</span>";
+    }).join("");
+  }
+  function praiseField(text) {
+    var inner = praiseMarkup(text);
+    if (!editing) return inner;
+    return '<span class="ed" data-k="praise" contenteditable="true" spellcheck="false">' + inner + "</span>";
+  }
+  function readPraise(el) {
+    var nodes = el.querySelectorAll(".pt");
+    var parts = [];
+    if (nodes.length) {
+      [].forEach.call(nodes, function (n) {
+        var s = (n.textContent || "").replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
+        s = s.replace(/^[·•/.\s]+|[·•/.\s]+$/g, "");
+        if (s) parts.push(s);
+      });
+    } else parts = praiseTitles(plain(el));
+    var original = viewJ && viewJ.praise;
+    if (original && praiseTitles(original).join("\n") === parts.join("\n")) return original;
+    return parts.join(".   ");
+  }
   // "!   생활은" keeps the bang on the previous highlighted word. The spaces stay with this phrase.
   function peelLeadPunct(s) {
     var str = String(s == null ? "" : s);
@@ -317,11 +348,12 @@
     var J = clone(viewJ);
     var C = clone(viewC);
     [].forEach.call(document.querySelectorAll("#book .ed"), function (el) {
-      var val = plain(el);
+      var key = el.getAttribute("data-k") || "";
+      var val = key === "praise" ? readPraise(el) : plain(el);
       var lead = el.getAttribute("data-lead") || "";
       if (lead && val.indexOf(lead) !== 0) val = lead + val;
-      if (isRoleField(el.getAttribute("data-k") || "")) val = withRoles(val);
-      setPath(J, C, el.getAttribute("data-k"), val);
+      if (isRoleField(key)) val = withRoles(val);
+      setPath(J, C, key, val);
     });
     viewJ = J;
     viewC = C;
@@ -586,7 +618,7 @@
       '<div class="pagehead"><div><h1>주일예배</h1></div><div class="meta">' +
       '<span class="chip">' + clock() + E("time", J.service && J.service.time) + "</span>" +
       '<span class="chip">' + E("leader", J.service && J.service.leader) + "</span></div></div>" +
-      '<div class="praise"><span class="note sym">♬</span>' + E("praise", J.praise || "") + "</div>" +
+      '<div class="praise"><span class="note sym">♬</span>' + praiseField(J.praise || "") + "</div>" +
       orderHtml + "</div></section>";
 
     var motto = "";

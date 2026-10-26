@@ -172,6 +172,8 @@ mark.ph {
 .praise, .sec-song, .key { font-size: 15px; }
 .praise { margin: 0 0 6px; line-height: 1.7; }
 .praise b, .sec-song b, .mid b { color: var(--clay); font-weight: 500; }
+.praise .pt, .praise .chunk { white-space: nowrap; }
+.praise .psep { display: inline-block; width: 1.2em; text-align: center; color: #C29D5F; font-weight: 700; }
 .key { margin: 0 0 8px; color: var(--soft); font-size: 13px; }
 .sec { margin: 22px 0 0; font-size: 13px; font-weight: 650; color: var(--clay); }
 .sec-song { margin: 4px 0 0; color: var(--soft); }

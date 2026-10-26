@@ -28,6 +28,18 @@
     return esc(x).replace(/\[([^\s\]][^\]]*)\]/g, '<mark class="ph">[$1]</mark>').replace(/\n/g, "<br>");
   }
   function blank(x) { return String(x == null ? "" : x).trim() === ""; }
+  function praiseTitles(text) {
+    return String(text || "").split(/\s*[.。,，]\s*/).map(function (s) {
+      return s.replace(/\([^)]*\)/g, "").replace(/\s+/g, " ").trim();
+    }).filter(Boolean);
+  }
+  function praiseMarkup(text) {
+    return praiseTitles(text).map(function (title, i) {
+      var span = '<span class="pt">' + esc(title) + "</span>";
+      if (!i) return span;
+      return '<span class="chunk"><span class="psep" aria-hidden="true">·</span>' + span + "</span>";
+    }).join("");
+  }
 
   function parseDate(s) {
     var p = String(s || "").split(".");
@@ -137,7 +149,7 @@
 
     var order =
       '<section class="block" id="order"><header class="sh"><span>01</span><h2>예배 순서</h2></header>' +
-      (J.praise ? '<p class="praise"><b aria-hidden="true">♬</b> ' + t(J.praise) + "</p>" : "") +
+      (J.praise ? '<p class="praise"><b aria-hidden="true">♬</b> ' + praiseMarkup(J.praise) + "</p>" : "") +
       '<p class="key">※ 일어섬 · ♬ 찬양</p><div class="order">' +
       (J.order || []).map(function (o) {
         if (o.section) {

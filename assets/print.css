@@ -236,9 +236,10 @@ body.pdf-capture .sheet {
 .p1 .rule { display: flex; align-items: center; gap: 3mm; margin: 3mm 0 5mm; }
 .p1 .rule i { display: block; width: 16mm; height: 0.35mm; background: var(--gold); }
 .p1 .rule b { width: 2mm; height: 2mm; border-radius: 50%; border: 0.35mm solid var(--gold); }
+.p1 .logo-wrap { margin-top: 14mm; }
 .logo-wrap {
-  width: 84mm;
-  height: 84mm;
+  width: 103mm;
+  height: 103mm;
   border-radius: 50%;
   background: radial-gradient(circle, #fff 62%, var(--peach-l) 63%, var(--peach-l) 100%);
   border: 0.5mm solid var(--peach);
@@ -246,11 +247,11 @@ body.pdf-capture .sheet {
   align-items: center;
   justify-content: center;
 }
-.logo-wrap img { width: 72mm; height: 72mm; }
+.logo-wrap img { width: 88mm; height: 88mm; }
 .p1 .confess {
-  margin-top: 7mm;
+  margin-top: 8mm;
   font-family: var(--serif);
-  font-size: 17pt;
+  font-size: 21pt;
   font-weight: 600;
   color: var(--navy);
   line-height: 1.7;
@@ -308,6 +309,14 @@ body.pdf-capture .sheet {
   font-weight: 500;
 }
 .praise .note, .row .note { color: var(--coral); margin-right: 1mm; }
+.praise .pt, .praise .chunk { white-space: nowrap; }
+.praise .psep {
+  display: inline-block;
+  width: 1.2em;
+  text-align: center;
+  color: var(--gold);
+  font-weight: 700;
+}
 .sec { margin-top: 3.4mm; }
 .p2 .sec { flex: 1 1 auto; display: flex; flex-direction: column; margin-top: 2.2mm; min-height: 0; }
 .p2 .rows { flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; }
