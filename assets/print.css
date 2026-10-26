@@ -708,6 +708,25 @@ body.editing .sheet, body.editing .spread-wrap { margin-left: 0; margin-right: 0
 }
 .edit-status:empty { display: none; }
 .edit-status { margin: 2px 0 0; font-size: 13px; font-weight: 700; color: var(--coral); min-height: 0; }
+.edit-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 40;
+  width: min(440px, calc(100% - 24px));
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #1b2747;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.45;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(27, 39, 71, .28);
+}
+.edit-toast.bad { background: #8c2f2f; }
 .tokenbox { margin-top: 8px; background: #fff; border: 1px solid var(--gold-l); border-radius: 14px; padding: 12px; }
 .tokenbox p { margin: 0 0 8px; font-size: 16px; }
 .tokenbox input { width: 100%; font: inherit; font-size: 18px; min-height: 52px; border-radius: 12px; border: 1px solid var(--gold-l); padding: 8px 12px; }

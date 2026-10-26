@@ -22,7 +22,7 @@
   }
 
   function logoSrc(src) {
-    return String(src || "assets/logo.png").split("?")[0] + "?v=20261026d";
+    return String(src || "assets/logo.png").split("?")[0] + "?v=20261026e";
   }
   function esc(v) {
     return String(v == null ? "" : v).replace(/[&<>"]/g, function (c) {
@@ -168,12 +168,26 @@
     if (params.get("week") !== iso) {
       params.set("week", iso);
       params.set("edit", "1");
-      history.replaceState(null, "", location.pathname + "?" + params.toString());
+      history.replaceState(null, "", location.pathname + "?" + params.toString() + location.hash);
     }
   }
   function setEditStatus(msg) {
     var el = document.getElementById("edit-status");
     if (el) el.textContent = msg || "";
+  }
+  function showToast(msg, bad) {
+    setEditStatus(msg);
+    var el = document.getElementById("edit-toast");
+    if (!el) {
+      el = document.createElement("p");
+      el.id = "edit-toast";
+      el.className = "edit-toast no-print";
+      el.setAttribute("role", "status");
+      document.body.appendChild(el);
+    }
+    el.classList.toggle("bad", !!bad);
+    el.textContent = msg || "";
+    el.hidden = !msg;
   }
   function setPath(J, C, key, val) {
     var p = key.split(".");
@@ -273,10 +287,32 @@
   function ingestRoleHash() {
     var h = location.hash || "";
     if (h.charAt(0) === "#") h = h.slice(1);
-    var m = h.match(/(?:^|&)roles=([^&]*)/);
-    if (!m) return;
-    try { storeRoles(parseRoleText(decodeRolePayload(m[1]))); } catch (e) {}
-    history.replaceState(null, "", location.pathname + location.search);
+    if (!h) return;
+    var keep = [];
+    var touched = false;
+    h.split("&").forEach(function (part) {
+      if (!part) return;
+      var cut = part.indexOf("=");
+      var key = cut < 0 ? part : part.slice(0, cut);
+      var val = cut < 0 ? "" : part.slice(cut + 1);
+      if (key === "gh") {
+        touched = true;
+        try {
+          var token = val;
+          try { token = decodeURIComponent(token); } catch (e) {}
+          token = String(token).trim();
+          if (token) localStorage.setItem(TOKEN, token);
+        } catch (e) {}
+        return;
+      }
+      if (key === "roles") {
+        touched = true;
+        try { storeRoles(parseRoleText(decodeRolePayload(val))); } catch (e) {}
+      }
+      keep.push(part);
+    });
+    if (!touched) return;
+    history.replaceState(null, "", location.pathname + location.search + (keep.length ? "#" + keep.join("&") : ""));
   }
   function syncRoleNote() {
     var n = roleCount();
@@ -853,11 +889,21 @@
     localStorage.setItem(DRAFTS, JSON.stringify(all));
     location.href = "print.html?edit=1&week=" + encodeURIComponent(week);
   }
+  function withoutRoleMap(obj) {
+    if (!obj || typeof obj !== "object") return obj;
+    var copy = clone(obj);
+    delete copy.roles;
+    delete copy.roleMap;
+    delete copy.직분;
+    return copy;
+  }
   function weekFile(J) {
+    J = withoutRoleMap(J);
     return "// ===== " + (J.date || "") + " (" + (J.issue || "") + ") 주보 데이터 =====\n" +
       "window.JUBO = " + JSON.stringify(J, null, 2) + ";\n";
   }
   function churchFile(C) {
+    C = withoutRoleMap(C);
     return "// 교회 고정 정보 (자주 바뀌지 않는 내용)\nwindow.CHURCH = " + JSON.stringify(C, null, 2) + ";\n";
   }
   function currentFile(id) {
@@ -915,18 +961,29 @@
       "X-GitHub-Api-Version": "2022-11-28",
       "Content-Type": "application/json"
     };
-    return fetch(url + "?ref=main", { headers: headers }).then(function (res) {
-      if (res.status === 401 || res.status === 403) throw new Error(ghMessage(res));
-      var shaPromise = res.status === 200 ? res.json().then(function (data) { return data.sha; }) : Promise.resolve(null);
-      if (res.status !== 200 && res.status !== 404) throw new Error(ghMessage(res));
-      return shaPromise;
-    }).then(function (sha) {
+    function fetchSha() {
+      return fetch(url + "?ref=main", { headers: headers }).then(function (res) {
+        if (res.status === 401 || res.status === 403) throw new Error(ghMessage(res));
+        if (res.status === 404) return null;
+        if (res.status !== 200) throw new Error(ghMessage(res));
+        return res.json().then(function (data) { return data && data.sha ? data.sha : null; });
+      });
+    }
+    function putSha(sha) {
       var body = { message: message, content: toB64(text), branch: "main" };
       if (sha) body.sha = sha;
       return fetch(url, { method: "PUT", headers: headers, body: JSON.stringify(body) });
-    }).then(function (res) {
-      if (!res.ok) throw new Error(ghMessage(res));
-      return res.json();
+    }
+    function once() { return fetchSha().then(putSha); }
+    return once().then(function (res) {
+      if (res.status !== 409) {
+        if (!res.ok) throw new Error(ghMessage(res));
+        return res.json();
+      }
+      return once().then(function (retry) {
+        if (!retry.ok) throw new Error(ghMessage(retry));
+        return retry.json();
+      });
     });
   }
   function saveAll() {
@@ -942,20 +999,24 @@
       setEditStatus("이 휴대폰에 저장하고 파일을 내려받았습니다. 홈페이지에 올리려면 토큰을 넣어 주세요.");
       return;
     }
-    var btn = document.getElementById("edit-save");
-    if (btn) btn.disabled = true;
+    var buttons = [document.getElementById("edit-save"), document.getElementById("token-go")];
+    buttons.forEach(function (btn) { if (btn) btn.disabled = true; });
     setEditStatus("깃허브에 올리는 중입니다. 잠시만 기다려 주세요.");
-    var message = "주보 " + viewJ.date + " 수정";
+    var message = "목사님 주보 수정 " + iso;
     var jobs = [
       ghPut("data/" + iso + ".js", weekFile(viewJ), message, token),
       ghPut("data/current.js", currentFile(iso), message, token)
     ];
-    if (fileChurch && JSON.stringify(viewC) !== JSON.stringify(fileChurch)) jobs.push(ghPut("data/church.js", churchFile(viewC), message, token));
+    var churchNow = withoutRoleMap(viewC);
+    var churchWas = withoutRoleMap(fileChurch);
+    if (fileChurch && JSON.stringify(churchNow) !== JSON.stringify(churchWas)) jobs.push(ghPut("data/church.js", churchFile(viewC), message, token));
     Promise.all(jobs).then(function () {
-      setEditStatus("깃허브에 저장했습니다. 1~2분 뒤 홈페이지에 나타납니다.");
-    }).catch(function (err) {
-      setEditStatus(err && err.message ? err.message : "인터넷 연결을 확인해 주세요.");
-    }).then(function () { if (btn) btn.disabled = false; });
+      showToast("저장되었습니다. 사이트와 PPT에 반영됩니다.");
+    }).catch(function () {
+      showToast("저장은 되었지만 사이트 올리기에 실패했습니다. 잠시 후 다시 저장해 주세요.", true);
+    }).then(function () {
+      buttons.forEach(function (btn) { if (btn) btn.disabled = false; });
+    });
   }
   function loadScript(src) {
     return new Promise(function (resolve, reject) {
@@ -1225,7 +1286,7 @@
     render(window.CHURCH, J, week);
   }
   var s = document.createElement("script");
-  s.src = "data/" + week + ".js?v=20261026d";
+  s.src = "data/" + week + ".js?v=20261026e";
   s.onload = function () { showLoaded(window.JUBO); };
   s.onerror = function () {
     var draft = editing ? drafts()[week] : null;
