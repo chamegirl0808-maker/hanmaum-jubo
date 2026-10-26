@@ -2,7 +2,7 @@
 window.JUBO = {
   date: "2026.10.04",
   issue: "2026 - 제40호",
-  service: { time: "오전10:50", leader: "인도 김팔옥목사" },
+  service: { time: "오전10:50", leader: "인도 김팔옥 목사" },
   praise: "나의모습 나의 소유,  빛나는 왕의 왕,  예수 우리들의 밝은 빛,  하늘의 문을 여소서",
   // 예배순서: stand=true 이면 ※(일어서서) 표시. song=true 이면 ♬ 표시
   order: [
@@ -11,18 +11,18 @@ window.JUBO = {
     { name: "공동찬양기원", stand: true, mid: "지존하신 주님 이름 앞에", song: true, by: "다같이" },
     { name: "신앙고백", stand: true, mid: "사도신경", by: "다같이" },
     { name: "송영", stand: true, mid: "두손들고 찬양합니다", song: true, by: "다같이" },
-    { name: "대표기도", by: "조승훈장로" },
+    { name: "대표기도", by: "조승훈 장로" },
     { name: "교회소식", mid: "[ 새 가족 환영 ]", by: "담임목사" },
     { section: "예물 봉헌과 축복" },
-    { name: "예물봉헌", mid: "찬50장 주께 드리네 (후렴)", song: true, by: "김미희권사" },
+    { name: "예물봉헌", mid: "찬50장 주께 드리네 (후렴)", song: true, by: "김미희 권사" },
     { name: "봉헌축복기도", mid: "[ 치유와 회복을 위한 기도 ]", by: "담임목사" },
     { section: "은혜의 말씀", song: "주님 뜻대로 살기로 했네" },
-    { name: "성경봉독", mid: "창세기 12 : 1 ~ 4", strong: true, by: "김향자집사" },
-    { name: "설교", mid: "옮긴 사람들", strong: true, by: "전대구목사" },
+    { name: "성경봉독", mid: "창세기 12 : 1 ~ 4", strong: true, by: "김향자 집사" },
+    { name: "설교", mid: "옮긴 사람들", strong: true, by: "전대구 목사" },
     { section: "결단과 축복의 파송" },
     { name: "결단기도", mid: "[ 설교말씀을 기억하면서 ]", by: "다같이" },
     { name: "파송찬송", stand: true, mid: "찬635장 주기도문 송", song: true, by: "다같이" },
-    { name: "축도", stand: true, by: "전대구목사" },
+    { name: "축도", stand: true, by: "전대구 목사" },
     { name: "성도의 교제", mid: "( 애찬을 나누며 축복하며 )", by: "다같이" }
   ],
   newsHeadline: ["신앙은 ", "임마누엘", "!   생활은 ", "에벤에셀", "!   인생은 ", "할렐루야", "!"],

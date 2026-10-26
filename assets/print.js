@@ -240,17 +240,37 @@
   }
   function isRoleField(key) {
     if (!key) return false;
+    if (key === "leader") return true;
     if (/^ord\.\d+\.by$/.test(key)) return true;
     var m = key.match(/^srv\.\d+\.(\d+)$/);
     if (!m) return false;
     var col = Number(m[1]);
     return col >= 1 && col <= 4;
   }
-  function withRoles(text) {
-    var map = roleMap();
-    if (!map) return text;
+  function displayTitle(title) {
+    return title === "담임목사" ? "목사" : title;
+  }
+  function spaceGluedTitles(text) {
     var re = /(\s+|[\/／,，、]+)/;
     var parts = String(text == null ? "" : text).split(re);
+    for (var i = 0; i < parts.length; i++) {
+      var tok = parts[i];
+      if (!tok || re.test(tok) || isRoleTitle(tok)) continue;
+      var best = "";
+      for (var t = 0; t < ROLE_TITLES.length; t++) {
+        var title = ROLE_TITLES[t];
+        if (tok.length > title.length && title.length > best.length && tok.slice(-title.length) === title) best = title;
+      }
+      if (best) parts[i] = tok.slice(0, -best.length) + " " + displayTitle(best);
+    }
+    return parts.join("");
+  }
+  function withRoles(text) {
+    var spaced = spaceGluedTitles(text);
+    var map = roleMap();
+    if (!map) return spaced;
+    var re = /(\s+|[\/／,，、]+)/;
+    var parts = String(spaced == null ? "" : spaced).split(re);
     var i = 0;
     while (i < parts.length) {
       var tok = parts[i];
@@ -259,7 +279,7 @@
       if (!rawTitle || BARE_TITLES[rawTitle]) { i++; continue; }
       var j = i + 1;
       while (j < parts.length && (!parts[j] || re.test(parts[j]))) j++;
-      var shown = rawTitle === "담임목사" ? "목사" : rawTitle;
+      var shown = displayTitle(rawTitle);
       if (j < parts.length && (isRoleTitle(parts[j]) || parts[j] === shown)) { i++; continue; }
       parts.splice(i + 1, 0, " ", shown);
       i += 3;
@@ -290,6 +310,20 @@
     viewJ = J;
     viewC = C;
     window.CHURCH = C;
+  }
+  function applyLoadedRoles(J) {
+    if (!editing || !J) return false;
+    var changed = false;
+    (J.order || []).forEach(function (o) {
+      if (!o || o.by == null || o.by === "") return;
+      var next = withRoles(o.by);
+      if (next !== o.by) { o.by = next; changed = true; }
+    });
+    if (J.service && J.service.leader) {
+      var leader = withRoles(J.service.leader);
+      if (leader !== J.service.leader) { J.service.leader = leader; changed = true; }
+    }
+    return changed;
   }
   function scheduleSave() {
     if (!editing) return;
@@ -497,6 +531,7 @@
 
     var orderHtml = groupOrder(J.order).map(function (g) {
       var songRow = "";
+      var songBtn = "";
       if (g.o && Object.prototype.hasOwnProperty.call(g.o, "song")) {
         var songText = String(g.o.song || "");
         var songFilled = !blank(songText);
@@ -504,7 +539,7 @@
           songRow = '<div class="row songrow' + (songFilled ? "" : " song-empty no-print") + '"><div class="a"></div><div class="b"><span class="note sym">♬</span> ' +
             E("ord." + g.i + ".song", songText) + '</div><div class="c"></div></div>';
         } else if (editing) {
-          songRow = '<button type="button" class="addline no-print songadd" data-add="song" data-i="' + g.i + '">+ 특송 추가</button>';
+          songBtn = '<button type="button" class="songadd no-print" data-add="song" data-i="' + g.i + '">+ 특송 넣기 (인쇄 안 됨)</button>';
         }
       }
       var rows = songRow + g.rows.map(function (item) {
@@ -515,7 +550,8 @@
           '<div class="c">' + E("ord." + i + ".by", o.by || "") + "</div></div>";
       }).join("");
       var pill = g.o && g.o.section ? '<span class="pill"><span class="dot"></span>' + E("ord." + g.i + ".section", g.o.section) + "</span>" : "";
-      return '<div class="sec">' + pill + '<div class="card rows">' + rows + "</div></div>";
+      var head = (pill || songBtn) ? '<div class="sechead">' + pill + songBtn + "</div>" : "";
+      return '<div class="sec">' + head + '<div class="card rows">' + rows + "</div></div>";
     }).join("");
 
     var page2 =
@@ -1078,11 +1114,12 @@
   function showLoaded(J) {
     if (editing) {
       var draft = drafts()[week];
-      if (draft && draft.jubo) {
-        render(draft.church || window.CHURCH, draft.jubo, week);
-        setEditStatus("이 휴대폰에 남겨 둔 수정을 불러왔습니다.");
-        return;
-      }
+      var jubo = clone((draft && draft.jubo) ? draft.jubo : J);
+      var church = (draft && draft.church) ? draft.church : window.CHURCH;
+      if (applyLoadedRoles(jubo)) writeDraft(jubo, church);
+      render(church, jubo, week);
+      if (draft && draft.jubo) setEditStatus("이 휴대폰에 남겨 둔 수정을 불러왔습니다.");
+      return;
     }
     render(window.CHURCH, J, week);
   }
