@@ -372,7 +372,8 @@ body.editing .p3 .news { margin-bottom: 1mm; }
 body.editing .p3 .news li { margin: 0.3mm 0; }
 body.editing .p3 .wrapcard { padding: 1.2mm 2.6mm 0.6mm; margin-bottom: 1.1mm; }
 body.editing .p3 .tbl td { padding: 0.55mm 0.6mm; }
-body.editing .p3 .nf td { height: 6mm; }
+body.editing .p3 .addline { min-height: 28px; height: 28px; font-size: 13px; padding: 0 8px; }
+body.editing .p3 .nf td { height: auto; padding: 0.2mm 0.6mm; }
 body.editing .p3 .offer { padding: 1.2mm 3.2mm 1mm; }
 body.editing .p3 .offer .o { padding: 0.1mm 0; line-height: 1.25; }
 .motto {
@@ -418,7 +419,8 @@ body.editing .p3 .offer .o { padding: 0.1mm 0; line-height: 1.25; }
 .wrapcard { padding: 2mm 3.2mm 1.4mm; margin-bottom: 2mm; }
 .mtitle { font-weight: 700; color: var(--navy); font-size: 13.5pt; }
 .mtitle .paren { color: var(--coral); }
-.nf td { height: 7.2mm; padding: 0 1mm; }
+.nf td { height: auto; padding: 0.55mm 1mm; line-height: 1.35; }
+.nf-add { text-align: right; margin-top: 0.6mm; }
 .nf td:first-child { width: 12mm; font-weight: 700; color: var(--gold); }
 .nf th { text-align: center; }
 .nf th.who { color: #4E6BB0; }

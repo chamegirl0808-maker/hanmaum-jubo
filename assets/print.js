@@ -518,6 +518,17 @@
     });
     return groups;
   }
+  function visitorFilled(r) {
+    return [1, 2, 3].some(function (i) { return String((r && r[i]) || "").trim() !== ""; });
+  }
+  function trimVisitors(rows) {
+    var list = (rows || []).map(function (r) {
+      return [0, 1, 2, 3].map(function (i) { return r && r[i] != null ? String(r[i]) : ""; });
+    });
+    while (list.length > 2 && !visitorFilled(list[list.length - 1])) list.pop();
+    while (list.length < 2) list.push(["", "", "", ""]);
+    return list;
+  }
   function render(C, J, week) {
     viewC = clone(C);
     viewJ = clone(J);
@@ -652,7 +663,9 @@
         return "<tr>" + [0, 1, 2, 3].map(function (i) {
           return "<td>" + E("newc." + ri + "." + i, r[i] || "") + "</td>";
         }).join("") + "</tr>";
-      }).join("") + "</table></div>" +
+      }).join("") + "</table>" +
+      (editing ? '<div class="nf-add no-print"><button type="button" class="addline" data-add="newc">+ 줄 추가</button></div>' : "") +
+      "</div>" +
       '<div class="card offer"><div class="boxhead"><span class="pill"><span class="dot"></span>지난 주 헌금자 명단</span></div>' +
       offerHtml + "</div></div></section>";
 
@@ -760,6 +773,10 @@
     harvest();
     if (kind === "news") viewJ.news.push("");
     if (kind === "srv") viewJ.servers.push(["", "", "", "", "", ""]);
+    if (kind === "newc") {
+      if (!viewJ.newcomers) viewJ.newcomers = [];
+      viewJ.newcomers.push(["", "", "", ""]);
+    }
     render(viewC, viewJ, dotToIso(viewJ.date));
     scheduleSave();
   }
@@ -1136,6 +1153,7 @@
     renderChrome(dw);
     var back = document.querySelector("#tools .brand");
     if (back) back.setAttribute("href", "edit.html" + (dw ? "?week=" + encodeURIComponent(dw) : ""));
+    pack.jubo.newcomers = trimVisitors(pack.jubo.newcomers);
     render(window.CHURCH, pack.jubo, dw);
     return;
   }
@@ -1150,11 +1168,14 @@
       var draft = drafts()[week];
       var jubo = clone((draft && draft.jubo) ? draft.jubo : J);
       var church = (draft && draft.church) ? draft.church : window.CHURCH;
+      jubo.newcomers = trimVisitors(jubo.newcomers);
       if (applyLoadedRoles(jubo)) writeDraft(jubo, church);
       render(church, jubo, week);
       if (draft && draft.jubo) setEditStatus("이 휴대폰에 남겨 둔 수정을 불러왔습니다.");
       return;
     }
+    J = clone(J);
+    J.newcomers = trimVisitors(J.newcomers);
     render(window.CHURCH, J, week);
   }
   var s = document.createElement("script");
