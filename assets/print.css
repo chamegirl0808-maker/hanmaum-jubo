@@ -548,7 +548,12 @@ body.editing .p3 .offer .o { padding: 0.1mm 0; line-height: 1.25; }
   body.booklet { width: 297mm !important; }
   .no-print { display: none !important; }
   body.editing .sheet { zoom: 1 !important; }
-  body.booklet .mini .sheet { zoom: 0.654761905 !important; }
+  /* 7mm from the outer edges and the fold. 134.5/210 keeps the full page's shape. */
+  body.booklet .mini {
+    width: 134.5mm;
+    height: 190.221428571mm;
+  }
+  body.booklet .mini .sheet { zoom: 0.640476190476 !important; }
   body:not(.booklet) .sheet {
     width: 210mm;
     height: 297mm;
@@ -558,6 +563,9 @@ body.editing .p3 .offer .o { padding: 0.1mm 0; line-height: 1.25; }
     break-after: page;
     break-inside: avoid;
     page: portrait;
+    zoom: 1 !important;
+    transform: scale(0.933333333333) !important;
+    transform-origin: center center !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }

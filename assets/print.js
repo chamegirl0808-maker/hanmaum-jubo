@@ -428,12 +428,13 @@
     if (book) {
       how.innerHTML =
         "<p><b>접는 주보</b>는 A4 한 장을 앞뒤로 인쇄한 뒤 반으로 접습니다. 앞면은 왼쪽 4쪽, 오른쪽 1쪽입니다. 뒷면은 왼쪽 2쪽, 오른쪽 3쪽입니다.</p>" +
-        "<p class=\"print-note no-print\">인쇄 설정: 용지 A4, 방향 가로, 여백 없음(또는 기본), 배율 100%, 양면 짧은 쪽 넘기기, 배경 그래픽 켜기</p>" +
+        "<p class=\"print-note no-print\">인쇄 설정: 용지 A4, 방향 가로, 여백 없음, 배율 100%, 양면 짧은 쪽 넘기기, 배경 그래픽 켜기. 가장자리 7mm 여백은 인쇄면에 들어 있습니다.</p>" +
         "<p>글자가 잘리면 <b>접는 주보 PDF 받기</b>로 받은 파일을 배율 100%로 인쇄하세요. 인쇄한 다음 반으로 접으면 1쪽이 겉표지입니다.</p>";
     } else {
       how.innerHTML =
         "<p><b>한 장에 한 쪽씩</b>은 A4 네 장입니다. 표지, 예배 순서, 소식, 안내 순서입니다.</p>" +
-        "<ol><li>용지: A4</li><li>배율: 100%</li><li>배경 그래픽 켜기</li></ol>";
+        "<ol><li>용지: A4</li><li>여백: 없음</li><li>배율: 100%</li><li>배경 그래픽 켜기</li></ol>" +
+        "<p class=\"print-note no-print\">가장자리 7mm 여백은 인쇄면에 들어 있습니다. 여백을 더 넣지 마세요.</p>";
     }
   }
 
@@ -724,7 +725,7 @@
       '<a class="quiet" href="edit.html?week=' + encodeURIComponent(weekId || "") + '">칸으로 고치기</a></div>' +
       '<p class="edit-hint">글자를 누르면 바로 고칩니다.</p>' +
       '<p class="edit-hint" id="roles-detail"></p>' +
-      '<p class="print-note">인쇄: A4, 접는 주보는 가로·양면 짧은 쪽, 여백 없음, 배율 100%, 배경 그래픽 켜기</p></div>' +
+      '<p class="print-note">인쇄: A4, 여백 없음, 배율 100%, 배경 그래픽 켜기. 접는 주보는 가로·양면 짧은 쪽. 가장자리 7mm는 인쇄면에 포함됨</p></div>' +
       '<p class="edit-status" id="edit-status" role="status"></p>' +
       '<div class="tokenbox no-print" id="roles-box" hidden>' +
       '<p>이름,직분 을 한 줄에 하나씩 붙여 넣거나, CSV 파일을 고르세요. 이 목록은 이 휴대폰에만 남습니다.</p>' +
@@ -990,12 +991,13 @@
       });
       return chain.then(function () {
         var pdf = new window.jspdf.jsPDF({ orientation: "landscape", unit: "mm", format: "a4", compress: true });
-        var pageW = 137.5;
-        var pageH = 194.464286;
-        var mx = 5.5;
+        var safe = 7;
+        var halfW = 148.5;
+        var pageW = halfW - safe * 2;
+        var pageH = 297 * pageW / 210;
         var my = (210 - pageH) / 2;
         function place(index, col) {
-          pdf.addImage(images[index], "JPEG", col * 148.5 + mx, my, pageW, pageH);
+          pdf.addImage(images[index], "JPEG", col * halfW + safe, my, pageW, pageH);
         }
         place(3, 0);
         place(0, 1);
