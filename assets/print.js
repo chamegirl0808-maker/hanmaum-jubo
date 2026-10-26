@@ -21,6 +21,9 @@
     document.body.classList.add("editing");
   }
 
+  function logoSrc(src) {
+    return String(src || "assets/logo.png").split("?")[0] + "?v=20261026";
+  }
   function esc(v) {
     return String(v == null ? "" : v).replace(/[&<>"]/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
@@ -415,7 +418,7 @@
     }).join("");
     var back = "index.html" + (week ? "?week=" + encodeURIComponent(week) : "");
     document.getElementById("tools").innerHTML =
-      '<a class="brand" href="' + back + '"><img src="' + esc(church.logo || "assets/logo.png") + '" alt="" width="36" height="36"><span>' + esc(church.name || "주보") + " 인쇄</span></a>" +
+      '<a class="brand" href="' + back + '"><img src="' + esc(logoSrc(church.logo)) + '" alt="" width="36" height="36"><span>' + esc(church.name || "주보") + " 인쇄</span></a>" +
       '<div class="tool-row"><label>주차 <select aria-label="주보 주차">' + opts + "</select></label>" +
       '<button type="button" id="do-print">인쇄 / PDF</button>' +
       '<button type="button" id="do-booklet-pdf">접는 주보 PDF 받기</button></div>';
@@ -522,20 +525,25 @@
   }
 
   function clock() {
-    return '<svg viewBox="0 0 24 24" fill="none" stroke="#E07A5F" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="#e0620d" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
   }
   function decorateInvite(text) {
-    var html = esc(text).replace(/\n/g, "<br>");
-    [["평안과 건강한 삶, 보람된 삶을 원하십니까?", "c1"], ["예수님을 만나십시오.", "c1"], ["좋은 안내자가 필요합니다.", "c2"], ["한마음제자교회", "c2"], ["의미 있고 행복한 곳", "u"]].forEach(function (b) {
-      var safe = esc(b[0]);
-      html = html.split(safe).join(b[1] === "u" ? "<u>" + safe + "</u>" : '<span class="' + b[1] + '">' + safe + "</span>");
-    });
-    return html;
+    var marks = [["평안과 건강한 삶, 보람된 삶을 원하십니까?", "c1"], ["예수님을 만나십시오.", "c1"], ["좋은 안내자가 필요합니다.", "c2"], ["한마음제자교회", "c2"], ["의미 있고 행복한 곳", "u"]];
+    return String(text || "").split(/\n/).filter(function (line) {
+      return line.replace(/\s/g, "") !== "";
+    }).map(function (line) {
+      var html = esc(line);
+      marks.forEach(function (b) {
+        var safe = esc(b[0]);
+        html = html.split(safe).join(b[1] === "u" ? "<u>" + safe + "</u>" : '<span class="' + b[1] + '">' + safe + "</span>");
+      });
+      return '<div class="ln">' + html + "</div>";
+    }).join("");
   }
   function inviteField(text) {
     var inner = decorateInvite(text);
     if (!editing) return inner;
-    return '<span class="ed" data-k="ch.invite" contenteditable="true" spellcheck="false">' + inner + "</span>";
+    return '<div class="ed" data-k="ch.invite" contenteditable="true" spellcheck="false">' + inner + "</div>";
   }
   function groupOrder(order) {
     var groups = [];
@@ -580,7 +588,7 @@
       '<div class="tag">' + E("ch.slogan", C.slogan) + "</div>" +
       '<div class="name">' + E("ch.name", C.name) + "</div>" +
       '<div class="rule"><i></i><b></b><i></i></div>' +
-      '<div class="logo-wrap"><img src="assets/logo-cover.png" alt=""></div>' +
+      '<div class="logo-wrap"><img src="' + esc(logoSrc(C.logo)) + '" alt=""></div>' +
       '<div class="confess">' +
       (C.motto || []).map(function (m, i) {
         return (i ? "<br>" : "") + E("ch.motto." + i + ".0", m[0]) + "<em>" + E("ch.motto." + i + ".1", m[1]) + "</em>" + E("ch.motto." + i + ".2", m[2]);
@@ -749,6 +757,7 @@
     try { tokenNote = localStorage.getItem(TOKEN) ? "이 휴대폰에 토큰이 있습니다." : ""; } catch (e) {}
     bar.innerHTML =
       '<div class="edit-row">' +
+      '<img class="edit-logo" src="' + esc(logoSrc((window.CHURCH || {}).logo)) + '" alt="" width="32" height="32">' +
       '<select id="edit-week" aria-label="주보 날짜">' + opts + "</select>" +
       '<button type="button" id="edit-save" class="primary">저장</button>' +
       '<button type="button" id="edit-more" aria-expanded="false">더보기</button>' +
@@ -1216,7 +1225,7 @@
     render(window.CHURCH, J, week);
   }
   var s = document.createElement("script");
-  s.src = "data/" + week + ".js";
+  s.src = "data/" + week + ".js?v=20261026";
   s.onload = function () { showLoaded(window.JUBO); };
   s.onerror = function () {
     var draft = editing ? drafts()[week] : null;

@@ -5,6 +5,7 @@
   --soft: #5e534c;
   --line: #E4D5C8;
   --peach: #F6E3D6;
+  --orange: #e0620d;
   --clay: #8C4630;
   --sans: "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
 }
@@ -28,7 +29,7 @@ body {
   top: 0;
   z-index: 5;
 }
-.top a { color: var(--clay); font-weight: 700; text-decoration: none; font-size: 17px; }
+.top a { color: var(--orange); font-weight: 700; text-decoration: none; font-size: 17px; }
 .top strong { font-size: 20px; }
 main { max-width: 720px; margin: 0 auto; padding: 16px 16px 210px; }
 .lead, .hint { color: var(--soft); font-size: 17px; }
@@ -75,7 +76,7 @@ button {
   cursor: pointer;
 }
 button.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
-button.warn { color: var(--clay); }
+button.warn { color: var(--orange); }
 button:disabled { opacity: .55; }
 .actions {
   position: sticky;
@@ -98,7 +99,7 @@ button:disabled { opacity: .55; }
   margin: 0;
   text-align: center;
   font-weight: 700;
-  color: var(--clay);
+  color: var(--orange);
 }
 details { margin-top: 8px; }
 summary { font-weight: 700; font-size: 18px; cursor: pointer; padding: 8px 0; }

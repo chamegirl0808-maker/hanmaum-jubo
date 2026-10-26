@@ -10,13 +10,16 @@
   }
 
   var s = document.createElement("script");
-  s.src = "data/" + week + ".js";
+  s.src = "data/" + week + ".js?v=20261026";
   s.onload = function () { render(window.CHURCH, window.JUBO, week); };
   s.onerror = function () {
     document.getElementById("jubo").innerHTML = '<p class="err">' + week + " 주보 파일을 찾을 수 없습니다.</p>";
   };
   document.head.appendChild(s);
 
+  function logoSrc(src) {
+    return String(src || "assets/logo.png").split("?")[0] + "?v=20261026";
+  }
   function esc(t) {
     return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
@@ -41,12 +44,17 @@
     }).join("");
   }
   function decorateInvite(text) {
-    var html = esc(text).replace(/\n/g, "<br>");
-    [["평안과 건강한 삶, 보람된 삶을 원하십니까?", "c1"], ["예수님을 만나십시오.", "c1"], ["좋은 안내자가 필요합니다.", "c2"], ["한마음제자교회", "c2"], ["의미 있고 행복한 곳", "u"]].forEach(function (b) {
-      var safe = esc(b[0]);
-      html = html.split(safe).join(b[1] === "u" ? "<u>" + safe + "</u>" : '<span class="' + b[1] + '">' + safe + "</span>");
-    });
-    return html;
+    var marks = [["평안과 건강한 삶, 보람된 삶을 원하십니까?", "c1"], ["예수님을 만나십시오.", "c1"], ["좋은 안내자가 필요합니다.", "c2"], ["한마음제자교회", "c2"], ["의미 있고 행복한 곳", "u"]];
+    return String(text || "").split(/\n/).filter(function (line) {
+      return line.replace(/\s/g, "") !== "";
+    }).map(function (line) {
+      var html = esc(line);
+      marks.forEach(function (b) {
+        var safe = esc(b[0]);
+        html = html.split(safe).join(b[1] === "u" ? "<u>" + safe + "</u>" : '<span class="' + b[1] + '">' + safe + "</span>");
+      });
+      return '<div class="ln">' + html + "</div>";
+    }).join("");
   }
 
   function parseDate(s) {
@@ -89,7 +97,7 @@
       return '<option value="' + esc(w) + '"' + (w === week ? " selected" : "") + ">" + esc(w) + "</option>";
     }).join("");
     document.getElementById("toolbar").innerHTML =
-      '<a class="brand" href="#cover"><img src="' + esc(church.logo || "assets/logo.png") + '" alt="" width="36" height="36"><span>' + esc(church.name || "주보") + "</span></a>" +
+      '<a class="brand" href="#cover"><img src="' + esc(logoSrc(church.logo)) + '" alt="" width="36" height="36"><span>' + esc(church.name || "주보") + "</span></a>" +
       '<div class="tools"><label class="week"><span class="sr">주차</span><select aria-label="주보 주차">' + opts + "</select></label>" +
       '<button type="button" id="edit-btn">수정하기</button>' +
       '<button type="button" id="print-btn" aria-label="인쇄 / PDF"><span class="long">인쇄 / PDF</span><span class="short">인쇄</span></button></div>';
@@ -133,7 +141,7 @@
 
     var hero =
       '<section class="hero" id="cover">' +
-      '<div class="hero-id"><img class="logo" src="assets/logo-cover.png" alt="" width="48" height="48">' +
+      '<div class="hero-id"><img class="logo" src="' + esc(logoSrc(C.logo)) + '" alt="" width="132" height="132">' +
       '<div><p class="church">' + esc(C.name) + "</p><p class=\"slogan\">" + t(C.slogan) + "</p></div></div>" +
       '<p class="issue-line"><span>' + (dow || "주일") + "</span><span>" + t(J.issue) + "</span></p>" +
       (date
@@ -268,7 +276,7 @@
         return "<li><span>" + esc(p[0]) + "</span><b>" + esc(p[1]) + "</b></li>";
       }).join("") +
       "</ul>" +
-      (C.invitation ? '<p class="invite">' + decorateInvite(C.invitation) + "</p>" : "") +
+      (C.invitation ? '<div class="invite">' + decorateInvite(C.invitation) + "</div>" : "") +
       "</section>";
 
     document.getElementById("jubo").innerHTML = hero + order + sermonBlock + news + prayer + servers + welcome + offering + guide + visit;
