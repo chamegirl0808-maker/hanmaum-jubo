@@ -226,9 +226,9 @@ body.pdf-capture .sheet {
 .p1 .tag { font-size: 14pt; color: var(--mute); letter-spacing: 0.08em; font-weight: 500; }
 .p1 .name {
   font-family: var(--serif);
-  font-weight: 700;
+  font-weight: 900;
   font-size: 38pt;
-  color: var(--navy);
+  color: #1b2747;
   letter-spacing: 0.06em;
   margin-top: 1.5mm;
   line-height: 1.2;
@@ -247,17 +247,24 @@ body.pdf-capture .sheet {
   align-items: center;
   justify-content: center;
 }
-.logo-wrap img { width: 88mm; height: 88mm; }
+.logo-wrap img {
+  width: 88mm;
+  height: 88mm;
+  opacity: 1;
+  filter: saturate(1.35) contrast(1.15);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
 .p1 .confess {
   margin-top: 8mm;
   font-family: var(--serif);
   font-size: 21pt;
-  font-weight: 600;
-  color: var(--navy);
+  font-weight: 800;
+  color: #1b2747;
   line-height: 1.7;
   letter-spacing: 0.03em;
 }
-.p1 .confess em { font-style: normal; color: var(--coral); font-weight: 700; }
+.p1 .confess em { font-style: normal; color: #d9381e; font-weight: 800; }
 .p1 .info {
   margin-top: auto;
   width: 100%;

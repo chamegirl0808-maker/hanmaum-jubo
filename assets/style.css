@@ -120,8 +120,8 @@ a { color: inherit; }
 .hero, .block { scroll-margin-top: 116px; }
 .hero { padding: 28px 4px 12px; }
 .hero-id { display: flex; align-items: center; gap: 12px; }
-.hero .logo { width: 48px; height: 48px; }
-.church { margin: 0; font-size: 18px; font-weight: 650; letter-spacing: -0.03em; }
+.hero .logo { width: 48px; height: 48px; opacity: 1; filter: saturate(1.35) contrast(1.15); }
+.church { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: -0.03em; color: #1b2747; }
 .slogan { margin: 2px 0 0; color: var(--soft); font-size: 14px; }
 .issue-line { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 36px 0 0; color: var(--clay); font-size: 14px; font-weight: 600; }
 .when { margin: 8px 0 0; font-size: 15px; color: var(--soft); }
@@ -147,9 +147,9 @@ a { color: inherit; }
 .meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; padding: 0; list-style: none; }
 .meta li { background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; font-size: 14px; }
 .motto { margin-top: 36px; }
-.motto p { margin: 0; font-family: var(--serif); font-size: 18px; line-height: 1.7; }
+.motto p { margin: 0; font-family: var(--serif); font-size: 18px; font-weight: 800; line-height: 1.7; color: #1b2747; }
 .motto .kicker { font-family: var(--sans); }
-.motto em { font-style: normal; color: var(--clay); }
+.motto em { font-style: normal; color: #d9381e; font-weight: 800; }
 
 .block { margin-top: 28px; }
 .sh { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; }
