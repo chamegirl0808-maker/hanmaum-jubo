@@ -10,7 +10,7 @@
   }
 
   var s = document.createElement("script");
-  s.src = "data/" + week + ".js?v=20261026e";
+  s.src = "data/" + week + ".js?v=20261026f";
   s.onload = function () { render(window.CHURCH, window.JUBO, week); };
   s.onerror = function () {
     document.getElementById("jubo").innerHTML = '<p class="err">' + week + " 주보 파일을 찾을 수 없습니다.</p>";
@@ -18,7 +18,7 @@
   document.head.appendChild(s);
 
   function logoSrc(src) {
-    return String(src || "assets/logo.png").split("?")[0] + "?v=20261026e";
+    return String(src || "assets/logo.png").split("?")[0] + "?v=20261026f";
   }
   function esc(t) {
     return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) {
