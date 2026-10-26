@@ -425,8 +425,11 @@ body.editing .p3 .offer .o { padding: 0.1mm 0; line-height: 1.25; }
 .offer .o { display: grid; grid-template-columns: 26mm 1fr; gap: 1mm; font-size: 12.5pt; line-height: 1.35; padding: 0.35mm 0; font-weight: 500; color: var(--ink); }
 .offer .l { font-weight: 700; color: var(--navy); white-space: nowrap; }
 .offer .l .ast { color: var(--coral); font-weight: 700; margin-right: 0.6mm; }
-.offer .split { display: flex; justify-content: space-between; gap: 3mm; }
-.offer .split .alt b { color: var(--navy); font-weight: 700; }
+.offer .v, .offer .alt { min-width: 0; }
+.offer .nm { display: inline-block; white-space: nowrap; }
+.offer .o-pair { grid-template-columns: 26mm calc(50% - 27mm) minmax(0, 1fr); align-items: start; }
+.offer .alt .al { white-space: nowrap; }
+.offer .alt b { color: var(--navy); font-weight: 700; }
 
 /* page 4 */
 .vis { display: grid; grid-template-columns: 1fr 1fr; gap: 2.6mm; margin-bottom: 3.2mm; }

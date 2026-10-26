@@ -68,6 +68,21 @@
     var leadAttr = lead ? ' data-lead="' + esc(lead) + '"' : "";
     return '<span class="ed" data-k="' + esc(key) + '"' + leadAttr + ' contenteditable="true" spellcheck="false">' + html + "</span>";
   }
+  // A slash joins one couple, so "김팔옥/정영희" wraps as a single piece.
+  function nameListHtml(text) {
+    var src = String(text == null ? "" : text);
+    if (blank(src)) return "";
+    return src.split(/\n/).map(function (line) {
+      return line.split(/\s+/).filter(Boolean).map(function (tok) {
+        return '<span class="nm">' + esc(tok) + "</span>";
+      }).join(" ");
+    }).join("<br>");
+  }
+  function nameField(key, text) {
+    var html = nameListHtml(text);
+    if (!editing) return html;
+    return '<span class="ed" data-k="' + esc(key) + '" contenteditable="true" spellcheck="false">' + html + "</span>";
+  }
   // "!   생활은" keeps the bang on the previous highlighted word. The spaces stay with this phrase.
   function peelLeadPunct(s) {
     var str = String(s == null ? "" : s);
@@ -586,18 +601,19 @@
     (J.offerings || []).forEach(function (o, i) { if (o[0] === "강단장식") altar = { o: o, i: i }; });
     var offerHtml = (J.offerings || []).map(function (o, i) {
       if (altar && i === altar.i) return "";
-      var value = (!editing && blank(o[1]) ? "" : E("off." + i + ".1", o[1] || ""));
       if (altar && o[0] === "오병이어") {
-        value = '<span class="split"><span>' + value + '</span><span class="alt"><b>' +
-          E("off." + altar.i + ".0", altar.o[0]) + "</b> : " +
-          E("off." + altar.i + ".1", altar.o[1] || "") + "</span></span>";
+        return '<div class="o o-pair"><span class="l"><span class="ast">*</span>' + E("off." + i + ".0", o[0]) +
+          ' :</span><span class="v">' + nameField("off." + i + ".1", o[1]) +
+          '</span><span class="alt"><span class="al"><b>' + E("off." + altar.i + ".0", altar.o[0]) +
+          "</b> :</span> " + nameField("off." + altar.i + ".1", altar.o[1]) + "</span></div>";
       }
-      return '<div class="o"><span class="l"><span class="ast">*</span>' + E("off." + i + ".0", o[0]) + " :</span><span class=\"v\">" + value + "</span></div>";
+      return '<div class="o"><span class="l"><span class="ast">*</span>' + E("off." + i + ".0", o[0]) +
+        ' :</span><span class="v">' + nameField("off." + i + ".1", o[1]) + "</span></div>";
     }).join("");
     if (J.youth && J.youth.length) {
       offerHtml += '<div class="o"><span class="l"><span class="ast">*</span>청소년부 :</span><span class="v">' +
         J.youth.map(function (y, i) {
-          return E("youth." + i + ".0", y[0]) + " : " + (!editing && blank(y[1]) ? "" : E("youth." + i + ".1", y[1] || ""));
+          return E("youth." + i + ".0", y[0]) + " : " + nameField("youth." + i + ".1", y[1]);
         }).join("<br>") + "</span></div>";
     }
 
