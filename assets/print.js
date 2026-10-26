@@ -261,11 +261,7 @@
   function isRoleField(key) {
     if (!key) return false;
     if (key === "leader") return true;
-    if (/^ord\.\d+\.by$/.test(key)) return true;
-    var m = key.match(/^srv\.\d+\.(\d+)$/);
-    if (!m) return false;
-    var col = Number(m[1]);
-    return col >= 1 && col <= 4;
+    return /^ord\.\d+\.by$/.test(key);
   }
   function displayTitle(title) {
     return title === "담임목사" ? "목사" : title;
