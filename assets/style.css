@@ -127,8 +127,8 @@ a { color: inherit; }
 .hero .logo {
   width: 132px; height: 132px; opacity: 1; object-fit: contain;
   border-radius: 50%; padding: 6px;
-  background: radial-gradient(circle, #fff 62%, #fbc79e 63%, #fbc79e 100%);
-  border: 3px solid #fbc79e;
+  background: radial-gradient(circle, #fff 62%, #fcd6b6 63%, #fcd6b6 100%);
+  border: 3px solid #fcd6b6;
 }
 .church {
   margin: 0;
@@ -165,7 +165,7 @@ a { color: inherit; }
 .motto { margin-top: 28px; text-align: center; }
 .motto p { margin: 0; font-family: var(--serif); font-size: 22px; font-weight: 800; line-height: 1.65; color: #1b2747; }
 .motto .kicker { font-family: var(--sans); font-size: 13px; font-weight: 650; color: var(--clay); }
-.motto em { font-style: normal; color: var(--orange); font-weight: 800; }
+.motto em { font-style: normal; color: #d62828; font-weight: 800; }
 
 .block { margin-top: 28px; }
 .sh { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; }

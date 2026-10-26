@@ -177,9 +177,9 @@ body.pdf-capture .sheet {
 .p1 .blob { display: block; position: absolute; border-radius: 50%; }
 .p1 .blob { z-index: 0; }
 .p1 .inner { z-index: 1; }
-.p1 .blob.t { width: 120mm; height: 120mm; left: -45mm; top: -50mm; background: #fcd3b0; }
-.p1 .blob.r { width: 90mm; height: 90mm; right: -38mm; top: 70mm; background: #fcd3b0; }
-.p1 .blob.l { width: 70mm; height: 70mm; left: -30mm; bottom: 70mm; background: #fcd3b0; }
+.p1 .blob.t { width: 120mm; height: 120mm; left: -45mm; top: -50mm; background: #fde3cc; }
+.p1 .blob.r { width: 90mm; height: 90mm; right: -38mm; top: 70mm; background: #fde3cc; }
+.p1 .blob.l { width: 70mm; height: 70mm; left: -30mm; bottom: 70mm; background: #fde3cc; }
 
 .pill {
   display: inline-flex;
@@ -246,8 +246,8 @@ body.pdf-capture .sheet {
   width: 103mm;
   height: 103mm;
   border-radius: 50%;
-  background: radial-gradient(circle, #fff 62%, #fbc79e 63%, #fbc79e 100%);
-  border: 0.5mm solid #fbc79e;
+  background: radial-gradient(circle, #fff 62%, #fcd6b6 63%, #fcd6b6 100%);
+  border: 0.5mm solid #fcd6b6;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -268,7 +268,7 @@ body.pdf-capture .sheet {
   line-height: 1.7;
   letter-spacing: 0.03em;
 }
-.p1 .confess em { font-style: normal; color: var(--orange); font-weight: 800; }
+.p1 .confess em { font-style: normal; color: #d62828; font-weight: 800; }
 .p1 .info {
   margin-top: auto;
   width: 100%;
