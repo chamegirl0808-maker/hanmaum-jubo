@@ -194,6 +194,7 @@ mark.ph {
 .sec { margin: 22px 0 0; font-size: 13px; font-weight: 650; color: var(--orange); }
 .sec-song { margin: 4px 0 0; color: var(--soft); }
 .row { display: flex; gap: 8px; padding: 13px 0; border-bottom: 1px solid var(--line); }
+#order .row:not(.strong) { border-bottom: 1.5px solid #E0C9AC; }
 .flag { width: 1em; flex: none; color: var(--orange); line-height: 1.5; }
 .body { flex: 1; min-width: 0; }
 .line { display: flex; justify-content: space-between; gap: 16px; align-items: baseline; }
@@ -218,6 +219,8 @@ mark.ph {
   border-radius: 18px;
   padding: 16px;
 }
+#news .card,
+#prayer .card { border: 1.5px solid #E1C692; }
 .card h3 { margin: 0; font-size: 16px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.45; }
 .card p { margin: 6px 0 0; color: var(--ink); }
 .card .idx {
@@ -237,7 +240,9 @@ mark.ph {
 
 .srv-list { display: grid; gap: 10px; }
 .srv { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 16px; }
+#servers .srv { border: 1.5px solid #E1C692; }
 .srv.is-now { background: #FBF4EE; border-color: #E7C8B6; }
+#servers .srv.is-now { border-color: #E0B498; }
 .srv-day { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
 .srv-day b { font-size: 22px; font-weight: 650; letter-spacing: -0.03em; }
 .srv-day em { font-style: normal; font-size: 12px; font-weight: 650; color: var(--clay); }
@@ -246,9 +251,11 @@ mark.ph {
 .roles i, .ev i { display: block; font-style: normal; font-size: 12px; color: var(--soft); font-weight: 500; }
 .roles b { font-weight: 600; }
 .ev { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+#servers .ev { border-top: 1.5px solid #E0C9AC; }
 
 .people { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .people li { display: flex; gap: 14px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 16px; }
+#welcome .people li { border: 1.5px solid #E1C692; }
 .people li > b { flex: none; min-width: 2.2em; font-size: 18px; }
 .people strong { font-size: 17px; }
 .people p { margin: 4px 0 0; color: var(--soft); font-size: 14px; }
@@ -256,6 +263,8 @@ mark.ph {
 
 .offer { border-top: 1px solid var(--line); }
 .offer > div { display: grid; grid-template-columns: 5.6rem 1fr; gap: 8px 12px; padding: 13px 0; border-bottom: 1px solid var(--line); }
+#offering .offer { border-top: 1.5px solid #E0C9AC; }
+#offering .offer > div { border-bottom: 1.5px solid #E0C9AC; }
 .offer dt { margin: 0; font-size: 13px; font-weight: 650; color: var(--clay); }
 .offer dd { margin: 0; }
 .empty { color: var(--soft); }
@@ -351,6 +360,7 @@ mark.ph {
   border-radius: 18px;
   padding: 22px 18px;
 }
+#sermon .sermon-card { border: 1.5px solid #E1C692; }
 .sermon-card h3 {
   margin: 0;
   font-family: var(--serif);

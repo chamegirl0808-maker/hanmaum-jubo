@@ -22,7 +22,7 @@
   }
 
   function logoSrc(src) {
-    return String(src || "assets/logo.png").split("?")[0] + "?v=20261026f";
+    return String(src || "assets/logo.png").split("?")[0] + "?v=20261026g";
   }
   function esc(v) {
     return String(v == null ? "" : v).replace(/[&<>"]/g, function (c) {
@@ -1286,7 +1286,7 @@
     render(window.CHURCH, J, week);
   }
   var s = document.createElement("script");
-  s.src = "data/" + week + ".js?v=20261026f";
+  s.src = "data/" + week + ".js?v=20261026g";
   s.onload = function () { showLoaded(window.JUBO); };
   s.onerror = function () {
     var draft = editing ? drafts()[week] : null;

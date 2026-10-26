@@ -454,6 +454,42 @@ body.editing .p3 .offer .o { padding: 0.1mm 0; line-height: 1.25; }
 .offer .alt .al { white-space: nowrap; }
 .offer .alt b { color: var(--navy); font-weight: 700; }
 
+/* Pages 2–3 only: one step deeper apricot rules so they hold on paper. */
+.p2 .card,
+.p3 .card {
+  border-color: #E1C692;
+  border-width: 0.4mm;
+}
+.p2 .pagehead,
+.p3 .pagehead {
+  border-bottom-color: #E1C692;
+  border-bottom-width: 0.4mm;
+}
+.p2 .pill,
+.p3 .pill,
+.p2 .praise {
+  border-color: #F5B897;
+  border-width: 0.4mm;
+}
+.p2 .chip {
+  border-color: #E0C9AC;
+  border-width: 0.4mm;
+}
+.p2 .row {
+  border-bottom-color: #E0C9AC;
+  border-bottom-width: 0.35mm;
+}
+.p2 .row:last-child { border-bottom: none; }
+.p2 .row.sermon {
+  border-top: 0.45mm solid #F5B897;
+  border-bottom: 0.45mm solid #F5B897;
+}
+.p3 .tbl td {
+  border-bottom-color: #E0C9AC;
+  border-bottom-width: 0.35mm;
+}
+.p3 .tbl tr:last-child td { border-bottom: none; }
+
 /* page 4 */
 .vis { display: grid; grid-template-columns: 1fr 1fr; gap: 2.6mm; margin-bottom: 3.2mm; }
 .vis .v { padding: 2.6mm 3.6mm; }
