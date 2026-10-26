@@ -615,6 +615,8 @@ body.editing .sheet, body.editing .spread-wrap { margin-left: 0; margin-right: 0
 .tokenbox { margin-top: 8px; background: #fff; border: 1px solid var(--gold-l); border-radius: 14px; padding: 12px; }
 .tokenbox p { margin: 0 0 8px; font-size: 16px; }
 .tokenbox input { width: 100%; font: inherit; font-size: 18px; min-height: 52px; border-radius: 12px; border: 1px solid var(--gold-l); padding: 8px 12px; }
+.tokenbox textarea { width: 100%; font: inherit; font-size: 16px; border-radius: 12px; border: 1px solid var(--gold-l); padding: 8px 12px; min-height: 120px; resize: vertical; }
+.tokenbox input[type="file"] { margin-top: 8px; min-height: 0; font-size: 16px; }
 .editbar a.quiet { display: inline-block; margin-top: 6px; color: var(--coral); font-weight: 700; }
 body.editing .ed { border-radius: 3px; caret-color: var(--coral); }
 body.editing .ed:focus,

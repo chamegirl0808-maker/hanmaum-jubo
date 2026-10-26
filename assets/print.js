@@ -11,7 +11,11 @@
   var songOpen = {};
   var DRAFTS = "hmj-drafts";
   var TOKEN = "hmj-github-token";
+  var ROLES_KEY = "hmj-roles";
   var REPO = "chamegirl0808-maker/hanmaum-jubo";
+  var roleCache = null;
+  var ROLE_TITLES = ["안수집사", "담임목사", "전도사", "목사", "장로", "권사", "집사", "사모", "성도"];
+  var BARE_TITLES = { "성도": 1, "형제": 1, "자매": 1 };
   if (editing) {
     mode = "single";
     document.body.classList.add("editing");
@@ -164,14 +168,123 @@
     else if (p[1] === "wd") C.weekday[Number(p[2])][p[3]] = val;
     else if (p[1] === "svc") C.services[Number(p[2])][Number(p[3])] = val;
   }
+  function decodeRolePayload(payload) {
+    var s = String(payload || "");
+    try { s = decodeURIComponent(s); } catch (e) {}
+    s = s.replace(/-/g, "+").replace(/_/g, "/");
+    while (s.length % 4) s += "=";
+    var bin = atob(s);
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i) & 255;
+    if (window.TextDecoder) return new TextDecoder("utf-8").decode(bytes);
+    return decodeURIComponent(escape(bin));
+  }
+  function parseRoleText(text) {
+    var map = {};
+    String(text || "").replace(/^\uFEFF/, "").split(/\r?\n/).forEach(function (line) {
+      line = line.trim();
+      if (!line) return;
+      var cut = line.indexOf(",");
+      if (cut < 0) cut = line.indexOf("\t");
+      if (cut < 0) return;
+      var name = line.slice(0, cut).trim().replace(/^"|"$/g, "");
+      var title = line.slice(cut + 1).trim().replace(/^"|"$/g, "");
+      if (!name || !title || name === "이름" || name === "name") return;
+      map[name] = title;
+    });
+    return map;
+  }
+  function roleMap() {
+    if (roleCache) return roleCache;
+    try {
+      var raw = localStorage.getItem(ROLES_KEY);
+      if (!raw) return null;
+      var obj = JSON.parse(raw);
+      if (!obj || typeof obj !== "object") return null;
+      roleCache = obj;
+      return obj;
+    } catch (e) { return null; }
+  }
+  function roleCount() {
+    var map = roleMap();
+    if (!map) return 0;
+    var n = 0;
+    for (var k in map) if (Object.prototype.hasOwnProperty.call(map, k)) n++;
+    return n;
+  }
+  function storeRoles(map) {
+    var n = 0;
+    for (var k in map) if (Object.prototype.hasOwnProperty.call(map, k)) n++;
+    if (!n) return 0;
+    roleCache = map;
+    try { localStorage.setItem(ROLES_KEY, JSON.stringify(map)); } catch (e) {}
+    syncRoleNote();
+    return n;
+  }
+  function ingestRoleHash() {
+    var h = location.hash || "";
+    if (h.charAt(0) === "#") h = h.slice(1);
+    var m = h.match(/(?:^|&)roles=([^&]*)/);
+    if (!m) return;
+    try { storeRoles(parseRoleText(decodeRolePayload(m[1]))); } catch (e) {}
+    history.replaceState(null, "", location.pathname + location.search);
+  }
+  function syncRoleNote() {
+    var note = document.getElementById("roles-note");
+    if (!note) return;
+    var n = roleCount();
+    note.textContent = n ? "직분표 " + n + "명 저장됨" : "직분표 없음";
+  }
+  function isRoleTitle(tok) {
+    return ROLE_TITLES.indexOf(tok) >= 0;
+  }
+  function isRoleField(key) {
+    if (!key) return false;
+    if (/^ord\.\d+\.by$/.test(key)) return true;
+    var m = key.match(/^srv\.\d+\.(\d+)$/);
+    if (!m) return false;
+    var col = Number(m[1]);
+    return col >= 1 && col <= 4;
+  }
+  function withRoles(text) {
+    var map = roleMap();
+    if (!map) return text;
+    var re = /(\s+|[\/／,，、]+)/;
+    var parts = String(text == null ? "" : text).split(re);
+    var i = 0;
+    while (i < parts.length) {
+      var tok = parts[i];
+      if (!tok || re.test(tok)) { i++; continue; }
+      var rawTitle = map[tok];
+      if (!rawTitle || BARE_TITLES[rawTitle]) { i++; continue; }
+      var j = i + 1;
+      while (j < parts.length && (!parts[j] || re.test(parts[j]))) j++;
+      var shown = rawTitle === "담임목사" ? "목사" : rawTitle;
+      if (j < parts.length && (isRoleTitle(parts[j]) || parts[j] === shown)) { i++; continue; }
+      parts.splice(i + 1, 0, " ", shown);
+      i += 3;
+    }
+    return parts.join("");
+  }
+  function commitRoleField(el, force) {
+    if (!editing || !el) return;
+    if (!force && el === document.activeElement) return;
+    var key = el.getAttribute("data-k") || "";
+    if (!isRoleField(key)) return;
+    var val = plain(el);
+    var next = withRoles(val);
+    if (next !== val) el.textContent = next;
+  }
   function harvest() {
     if (!viewJ || !viewC) return;
+    [].forEach.call(document.querySelectorAll("#book .ed"), commitRoleField);
     var J = clone(viewJ);
     var C = clone(viewC);
     [].forEach.call(document.querySelectorAll("#book .ed"), function (el) {
       var val = plain(el);
       var lead = el.getAttribute("data-lead") || "";
       if (lead && val.indexOf(lead) !== 0) val = lead + val;
+      if (isRoleField(el.getAttribute("data-k") || "")) val = withRoles(val);
       setPath(J, C, el.getAttribute("data-k"), val);
     });
     viewJ = J;
@@ -539,6 +652,13 @@
       '<button type="button" id="edit-fold-pdf" class="printy grow">접는 주보 PDF 받기</button>' +
       '<button type="button" id="edit-single" class="printy grow">한 장씩 인쇄</button></div>' +
       '<p class="edit-hint">글자를 누르면 바로 고칩니다. 글자가 작으면 두 손가락으로 키우세요.</p>' +
+      '<p class="edit-hint no-print" id="roles-note">' + (roleCount() ? "직분표 " + roleCount() + "명 저장됨" : "직분표 없음") + "</p>" +
+      '<div class="edit-row no-print"><button type="button" id="roles-open">직분표 불러오기</button></div>' +
+      '<div class="tokenbox no-print" id="roles-box" hidden>' +
+      '<p>이름,직분 을 한 줄에 하나씩 붙여 넣거나, CSV 파일을 고르세요. 이 목록은 이 휴대폰에만 남습니다.</p>' +
+      '<textarea id="roles-text" rows="6" spellcheck="false" placeholder="이름,직분"></textarea>' +
+      '<input id="roles-file" type="file" accept=".csv,text/csv,text/plain">' +
+      '<div class="edit-row" style="margin-top:8px"><button type="button" id="roles-save" class="primary">이 목록 저장</button></div></div>' +
       '<p class="print-note no-print">인쇄 설정: 용지 A4, 방향 가로, 여백 없음(또는 기본), 배율 100%, 양면 짧은 쪽 넘기기, 배경 그래픽 켜기</p>' +
       '<p class="edit-status" id="edit-status" role="status"></p>' +
       '<div class="tokenbox" id="tokenbox" hidden><p id="token-note">' + esc(tokenNote) + "</p>" +
@@ -859,7 +979,10 @@
   });
   document.addEventListener("focusout", function (e) {
     var el = e.target && e.target.classList && e.target.classList.contains("ed") ? e.target : null;
-    if (el) el.classList.remove("on");
+    if (!el) return;
+    el.classList.remove("on");
+    commitRoleField(el, true);
+    if (isRoleField(el.getAttribute("data-k") || "")) scheduleSave();
   });
   document.addEventListener("paste", function (e) {
     var el = e.target.closest && e.target.closest(".ed");
@@ -878,6 +1001,17 @@
     if (btn.id === "edit-fold-pdf") return bookletPdf();
     if (btn.id === "edit-single") return printAs("single");
     if (btn.id === "file-go") { harvest(); downloadFiles(); setEditStatus("파일을 내려받았습니다."); return; }
+    if (btn.id === "roles-open") {
+      var box = document.getElementById("roles-box");
+      if (box) box.hidden = !box.hidden;
+      return;
+    }
+    if (btn.id === "roles-save") {
+      var pasted = document.getElementById("roles-text");
+      var n = storeRoles(parseRoleText(pasted ? pasted.value : ""));
+      setEditStatus(n ? "직분표 " + n + "명을 이 휴대폰에 저장했습니다." : "이름,직분 형식의 줄을 찾지 못했습니다.");
+      return;
+    }
     if (btn.getAttribute("data-add") === "song") {
       songOpen[Number(btn.getAttribute("data-i"))] = true;
       harvest();
@@ -890,6 +1024,16 @@
     if (btn.getAttribute("data-del")) return delRow(btn.getAttribute("data-del"), Number(btn.getAttribute("data-i")));
   });
   document.addEventListener("change", function (e) {
+    if (editing && e.target.id === "roles-file" && e.target.files && e.target.files[0]) {
+      var file = e.target.files[0];
+      var reader = new FileReader();
+      reader.onload = function () {
+        var n = storeRoles(parseRoleText(String(reader.result || "")));
+        setEditStatus(n ? "직분표 " + n + "명을 이 휴대폰에 저장했습니다." : "이름,직분 형식의 줄을 찾지 못했습니다.");
+      };
+      reader.readAsText(file, "UTF-8");
+      return;
+    }
     if (!editing || e.target.id !== "edit-week") return;
     try { harvest(); writeDraft(viewJ, viewC); } catch (err) {}
     location.href = "print.html?edit=1&week=" + encodeURIComponent(e.target.value);
@@ -908,6 +1052,7 @@
     fitWidth();
   });
 
+  ingestRoleHash();
   fileChurch = clone(window.CHURCH);
   if (q.get("draft") === "1" && !editing) {
     var pack = null;
