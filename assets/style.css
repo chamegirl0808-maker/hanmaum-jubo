@@ -127,8 +127,8 @@ a { color: inherit; }
 .hero .logo {
   width: 132px; height: 132px; opacity: 1; object-fit: contain;
   border-radius: 50%; padding: 6px;
-  background: radial-gradient(circle, #fff 62%, var(--apricot-deep) 63%, var(--apricot-deep) 100%);
-  border: 3px solid var(--apricot-deep);
+  background: radial-gradient(circle, #fff 62%, #fbc79e 63%, #fbc79e 100%);
+  border: 3px solid #fbc79e;
 }
 .church {
   margin: 0;

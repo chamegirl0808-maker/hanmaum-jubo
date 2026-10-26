@@ -177,9 +177,9 @@ body.pdf-capture .sheet {
 .p1 .blob { display: block; position: absolute; border-radius: 50%; }
 .p1 .blob { z-index: 0; }
 .p1 .inner { z-index: 1; }
-.p1 .blob.t { width: 120mm; height: 120mm; left: -45mm; top: -50mm; background: var(--apricot-deep); }
-.p1 .blob.r { width: 90mm; height: 90mm; right: -38mm; top: 70mm; background: var(--apricot); }
-.p1 .blob.l { width: 70mm; height: 70mm; left: -30mm; bottom: 70mm; background: var(--apricot); }
+.p1 .blob.t { width: 120mm; height: 120mm; left: -45mm; top: -50mm; background: #fcd3b0; }
+.p1 .blob.r { width: 90mm; height: 90mm; right: -38mm; top: 70mm; background: #fcd3b0; }
+.p1 .blob.l { width: 70mm; height: 70mm; left: -30mm; bottom: 70mm; background: #fcd3b0; }
 
 .pill {
   display: inline-flex;
@@ -246,8 +246,8 @@ body.pdf-capture .sheet {
   width: 103mm;
   height: 103mm;
   border-radius: 50%;
-  background: radial-gradient(circle, #fff 62%, var(--apricot-deep) 63%, var(--apricot-deep) 100%);
-  border: 0.5mm solid var(--apricot-deep);
+  background: radial-gradient(circle, #fff 62%, #fbc79e 63%, #fbc79e 100%);
+  border: 0.5mm solid #fbc79e;
   display: flex;
   align-items: center;
   justify-content: center;
