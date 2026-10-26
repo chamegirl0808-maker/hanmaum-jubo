@@ -142,7 +142,7 @@
       (J.order || []).map(function (o) {
         if (o.section) {
           return '<h3 class="sec">' + t(o.section) + "</h3>" +
-            (o.song ? '<p class="sec-song"><b aria-hidden="true">♬</b> ' + t(o.song) + "</p>" : "");
+            (!blank(o.song) ? '<p class="sec-song"><b aria-hidden="true">♬</b> ' + t(o.song) + "</p>" : "");
         }
         return '<div class="row' + (o.strong ? " strong" : "") + '"><span class="flag">' + (o.stand ? "※" : "") + "</span>" +
           '<div class="body"><div class="line"><span class="nm">' + t(o.name) + '</span><span class="by">' + t(o.by) + "</span></div>" +
@@ -159,7 +159,7 @@
       '<dl class="who-did">' +
       (sermon && sermon.by ? "<div><dt>설교</dt><dd>" + t(sermon.by) + "</dd></div>" : "") +
       (reading && reading.by ? "<div><dt>성경봉독</dt><dd>" + t(reading.by) + "</dd></div>" : "") +
-      (word && word.song ? "<div><dt>말씀 전 찬양</dt><dd>" + t(word.song) + "</dd></div>" : "") +
+      (word && !blank(word.song) ? "<div><dt>말씀 전 찬양</dt><dd>" + t(word.song) + "</dd></div>" : "") +
       "</dl></article></section>";
 
     var headline = (J.newsHeadline || []).map(function (x, i) {

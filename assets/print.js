@@ -8,6 +8,7 @@
   var viewC = null;
   var fileChurch = null;
   var saveTimer = null;
+  var songOpen = {};
   var DRAFTS = "hmj-drafts";
   var TOKEN = "hmj-github-token";
   var REPO = "chamegirl0808-maker/hanmaum-jubo";
@@ -56,11 +57,19 @@
       (extra ? '<p class="pmeta">' + extra + "</p>" : "") + "</header>";
   }
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
-  function E(key, value) {
+  function E(key, value, lead) {
     var raw = value == null ? "" : String(value);
     var html = t(raw);
     if (!editing) return blank(raw) ? "" : html;
-    return '<span class="ed" data-k="' + esc(key) + '" contenteditable="true" spellcheck="false">' + html + "</span>";
+    var leadAttr = lead ? ' data-lead="' + esc(lead) + '"' : "";
+    return '<span class="ed" data-k="' + esc(key) + '"' + leadAttr + ' contenteditable="true" spellcheck="false">' + html + "</span>";
+  }
+  // "!   생활은" keeps the bang on the previous highlighted word. The spaces stay with this phrase.
+  function peelLeadPunct(s) {
+    var str = String(s == null ? "" : s);
+    var m = str.match(/^[!！?？.。,，、:：;；…]+/);
+    if (!m) return { punct: "", rest: str };
+    return { punct: m[0], rest: str.slice(m[0].length) };
   }
   function plain(el) {
     var html = el.innerHTML.replace(/<br\s*\/?>/gi, "\n").replace(/<\/(div|p)>/gi, "\n").replace(/<[^>]+>/g, "");
@@ -160,7 +169,10 @@
     var J = clone(viewJ);
     var C = clone(viewC);
     [].forEach.call(document.querySelectorAll("#book .ed"), function (el) {
-      setPath(J, C, el.getAttribute("data-k"), plain(el));
+      var val = plain(el);
+      var lead = el.getAttribute("data-lead") || "";
+      if (lead && val.indexOf(lead) !== 0) val = lead + val;
+      setPath(J, C, el.getAttribute("data-k"), val);
     });
     viewJ = J;
     viewC = C;
@@ -373,8 +385,14 @@
     var orderHtml = groupOrder(J.order).map(function (g) {
       var songRow = "";
       if (g.o && Object.prototype.hasOwnProperty.call(g.o, "song")) {
-        songRow = '<div class="row empty"><div class="a"></div><div class="b"><span class="note sym">♬</span> ' +
-          E("ord." + g.i + ".song", g.o.song || "") + '</div><div class="c"></div></div>';
+        var songText = String(g.o.song || "");
+        var songFilled = !blank(songText);
+        if (songFilled || (editing && songOpen[g.i])) {
+          songRow = '<div class="row songrow' + (songFilled ? "" : " song-empty no-print") + '"><div class="a"></div><div class="b"><span class="note sym">♬</span> ' +
+            E("ord." + g.i + ".song", songText) + '</div><div class="c"></div></div>';
+        } else if (editing) {
+          songRow = '<button type="button" class="addline no-print songadd" data-add="song" data-i="' + g.i + '">+ 특송 추가</button>';
+        }
       }
       var rows = songRow + g.rows.map(function (item) {
         var o = item.o, i = item.i;
@@ -397,8 +415,23 @@
 
     var motto = "";
     var heads = J.newsHeadline || [];
-    for (var hi = 0; hi < heads.length; hi += 2) {
-      motto += "<span>" + E("head." + hi, heads[hi] || "") + (heads[hi + 1] != null ? "<em>" + E("head." + (hi + 1), heads[hi + 1]) + "</em>" : "") + "</span>";
+    var shown = heads.map(function (h) { return h == null ? "" : String(h); });
+    var leads = [];
+    for (var hi = 0; hi < shown.length; hi += 2) {
+      var punct = "";
+      if (hi + 2 < shown.length) {
+        var peeled = peelLeadPunct(shown[hi + 2]);
+        if (peeled.punct) {
+          punct = peeled.punct;
+          shown[hi + 2] = peeled.rest;
+          leads[hi + 2] = peeled.punct;
+        }
+      }
+      var emHere = hi + 1 < shown.length;
+      if (!shown[hi] && !emHere && !punct) continue;
+      motto += "<span>" + E("head." + hi, shown[hi], leads[hi] || "") +
+        (emHere ? "<em>" + E("head." + (hi + 1), shown[hi + 1]) + "</em>" : "") +
+        esc(punct) + "</span>";
     }
     var altar = null;
     (J.offerings || []).forEach(function (o, i) { if (o[0] === "강단장식") altar = { o: o, i: i }; });
@@ -800,6 +833,14 @@
       if (other !== el && other.getAttribute("data-k") === key) other.textContent = el.textContent;
     });
     if (key === "date" || key === "when") syncDate(el);
+    if (key && /\.song$/.test(key)) {
+      var songRowEl = el.closest(".songrow");
+      if (songRowEl) {
+        var songEmpty = blank(plain(el));
+        songRowEl.classList.toggle("no-print", songEmpty);
+        songRowEl.classList.toggle("song-empty", songEmpty);
+      }
+    }
     scheduleSave();
   });
   document.addEventListener("keydown", function (e) {
@@ -837,6 +878,14 @@
     if (btn.id === "edit-fold-pdf") return bookletPdf();
     if (btn.id === "edit-single") return printAs("single");
     if (btn.id === "file-go") { harvest(); downloadFiles(); setEditStatus("파일을 내려받았습니다."); return; }
+    if (btn.getAttribute("data-add") === "song") {
+      songOpen[Number(btn.getAttribute("data-i"))] = true;
+      harvest();
+      render(viewC, viewJ, dotToIso(viewJ.date));
+      var songField = document.querySelector('.ed[data-k="ord.' + btn.getAttribute("data-i") + '.song"]');
+      if (songField) songField.focus();
+      return;
+    }
     if (btn.getAttribute("data-add")) return addRow(btn.getAttribute("data-add"));
     if (btn.getAttribute("data-del")) return delRow(btn.getAttribute("data-del"), Number(btn.getAttribute("data-i")));
   });
