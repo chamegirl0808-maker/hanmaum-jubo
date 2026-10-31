@@ -714,9 +714,9 @@
 
     var page2 =
       '<section class="sheet p2"><span class="folio">2</span><div class="inner">' +
-      '<div class="pagehead"><div><h1>주일예배</h1></div><div class="meta">' +
-      '<span class="chip">' + clock() + E("time", J.service && J.service.time) + "</span>" +
-      '<span class="chip">' + E("leader", J.service && J.service.leader) + "</span></div></div>" +
+      '<div class="pagehead"><span class="chip">' + clock() + E("time", J.service && J.service.time) + "</span>" +
+      "<h1>주일예배</h1>" +
+      '<span class="chip">' + E("leader", J.service && J.service.leader) + "</span></div>" +
       '<div class="praise"><span class="note sym">♬</span>' + praiseField(J.praise || "") + "</div>" +
       orderHtml + "</div></section>";
 

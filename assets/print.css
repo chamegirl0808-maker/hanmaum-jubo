@@ -213,6 +213,14 @@ body.pdf-capture .sheet {
   line-height: 1.15;
   margin: 0;
 }
+.p2 .pagehead {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: end;
+}
+.p2 .pagehead > .chip:first-child { justify-self: start; }
+.p2 .pagehead > h1 { justify-self: center; }
+.p2 .pagehead > .chip:last-child { justify-self: end; }
 
 /* page 1 */
 .p1 .inner { align-items: center; text-align: center; }
