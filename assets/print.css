@@ -333,6 +333,32 @@ body.pdf-capture .sheet {
 .p2 .rows { flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; }
 .sechead { display: flex; align-items: center; justify-content: space-between; gap: 2mm; margin-bottom: 1.2mm; }
 .sechead .pill { margin-bottom: 0; }
+.p2 .sechead { position: relative; justify-content: center; }
+.p2 .sechead .pill {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0.15mm 0;
+  gap: 2.6mm;
+  color: var(--orange);
+  font-weight: 600;
+  font-size: 13pt;
+  letter-spacing: 0.14em;
+  line-height: 1.2;
+}
+.p2 .sechead .pill::before,
+.p2 .sechead .pill::after {
+  content: "";
+  width: 9mm;
+  border-top: 0.28mm solid var(--orange);
+  flex: none;
+}
+.p2 .sechead .songadd {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
 .songadd {
   flex: none;
   margin: 0;

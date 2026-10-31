@@ -707,7 +707,7 @@
           '<div class="b">' + (itemSong ? '<span class="note sym">♬</span>' : "") + E("ord." + i + ".mid", o.mid || "") + "</div>" +
           '<div class="c">' + E("ord." + i + ".by", o.by || "") + "</div></div>";
       }).join("");
-      var pill = g.o && g.o.section ? '<span class="pill"><span class="dot"></span>' + E("ord." + g.i + ".section", g.o.section) + "</span>" : "";
+      var pill = g.o && g.o.section ? '<span class="pill">' + E("ord." + g.i + ".section", g.o.section) + "</span>" : "";
       var head = (pill || songBtn) ? '<div class="sechead">' + pill + songBtn + "</div>" : "";
       return '<div class="sec">' + head + '<div class="card rows">' + rows + "</div></div>";
     }).join("");
