@@ -30,7 +30,15 @@
   function t(x) {
     return esc(x).replace(/\[([^\s\]][^\]]*)\]/g, '<mark class="ph">[$1]</mark>').replace(/\n/g, "<br>");
   }
-  function blank(x) { return String(x == null ? "" : x).trim() === ""; }
+  function blank(x) {
+    return String(x == null ? "" : x)
+      .replace(/<br\s*[^>]*>/gi, "\n")
+      .replace(/<\/?(?:div|p)\b[^>]*>/gi, "")
+      .replace(/[\u200b\u200c\u200d\ufeff]/g, "")
+      .replace(/&nbsp;/gi, " ")
+      .replace(/\u00a0/g, " ")
+      .trim() === "";
+  }
   function praiseTitles(text) {
     return String(text || "").split(/\s*[.。,，]\s*/).map(function (s) {
       return s.replace(/\([^)]*\)/g, "").replace(/\s+/g, " ").trim();
@@ -174,7 +182,7 @@
         }
         return '<div class="row' + (o.strong ? " strong" : "") + '"><span class="flag">' + (o.stand ? "※" : "") + "</span>" +
           '<div class="body"><div class="line"><span class="nm">' + t(o.name) + '</span><span class="by">' + t(o.by) + "</span></div>" +
-          (o.mid ? '<p class="mid">' + (o.song ? "<b aria-hidden=\"true\">♬</b> " : "") + t(o.mid) + "</p>" : "") +
+          (o.mid ? '<p class="mid">' + (o.song === true || (typeof o.song === "string" && !blank(o.song)) ? "<b aria-hidden=\"true\">♬</b> " : "") + t(o.mid) + "</p>" : "") +
           "</div></div>";
       }).join("") +
       "</div></section>";

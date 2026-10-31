@@ -32,7 +32,17 @@
   function t(x) {
     return esc(x).replace(/\[([^\s\]][^\]]*)\]/g, '<mark class="ph">[$1]</mark>').replace(/\n/g, "<br>");
   }
-  function blank(x) { return String(x == null ? "" : x).trim() === ""; }
+  // trim() leaves zero-width chars and a contenteditable <br>, which still count as text.
+  function stripMarks(x) {
+    return String(x == null ? "" : x)
+      .replace(/<br\s*[^>]*>/gi, "\n")
+      .replace(/<\/?(?:div|p)\b[^>]*>/gi, "")
+      .replace(/[\u200b\u200c\u200d\ufeff]/g, "")
+      .replace(/&nbsp;/gi, " ")
+      .replace(/\u00a0/g, " ");
+  }
+  function blank(x) { return stripMarks(x).trim() === ""; }
+  function cleanSong(x) { return stripMarks(x).trim(); }
   function parseDate(s) {
     var p = String(s || "").split(".");
     if (p.length < 3) return null;
@@ -392,11 +402,49 @@
       var lead = el.getAttribute("data-lead") || "";
       if (lead && val.indexOf(lead) !== 0) val = lead + val;
       if (isRoleField(key)) val = withRoles(val);
+      if (/\.song$/.test(key)) val = cleanSong(val);
       setPath(J, C, key, val);
+    });
+    (J.order || []).forEach(function (o) {
+      if (!o || !o.section || typeof o.song !== "string") return;
+      o.song = cleanSong(o.song);
     });
     viewJ = J;
     viewC = C;
     window.CHURCH = C;
+  }
+  function dropEmptyOpenSongs() {
+    if (!viewJ || !viewJ.order) return false;
+    var changed = false;
+    viewJ.order.forEach(function (o, i) {
+      if (!o || !o.section || !Object.prototype.hasOwnProperty.call(o, "song")) return;
+      if (typeof o.song !== "string") return;
+      var cleaned = cleanSong(o.song);
+      if (o.song !== cleaned) {
+        o.song = cleaned;
+        changed = true;
+      }
+      if (!cleaned && songOpen[i]) {
+        delete songOpen[i];
+        changed = true;
+      }
+    });
+    return changed;
+  }
+  function blankSongRowOpen() {
+    var nodes = document.querySelectorAll("#book .songrow");
+    for (var i = 0; i < nodes.length; i++) {
+      var ed = nodes[i].querySelector(".ed");
+      var text = ed ? plain(ed) : ((nodes[i].querySelector(".b") || nodes[i]).textContent || "").replace(/♬/g, "");
+      if (blank(text)) return true;
+    }
+    return false;
+  }
+  function settleSongs() {
+    if (editing) harvest();
+    var dropped = dropEmptyOpenSongs();
+    if (!dropped && !blankSongRowOpen()) return;
+    render(viewC, viewJ, (viewJ && dotToIso(viewJ.date)) || week);
   }
   function applyLoadedRoles(J) {
     if (!editing || !J) return false;
@@ -641,8 +689,9 @@
       var songRow = "";
       var songBtn = "";
       if (g.o && Object.prototype.hasOwnProperty.call(g.o, "song")) {
-        var songText = String(g.o.song || "");
-        var songFilled = !blank(songText);
+        var rawSong = g.o.song;
+        var songText = typeof rawSong === "string" ? cleanSong(rawSong) : String(rawSong == null ? "" : rawSong);
+        var songFilled = typeof rawSong === "string" ? songText !== "" : !blank(songText);
         if (songFilled || (editing && songOpen[g.i])) {
           songRow = '<div class="row songrow' + (songFilled ? "" : " song-empty no-print") + '"><div class="a"></div><div class="b"><span class="note sym">♬</span> ' +
             E("ord." + g.i + ".song", songText) + '</div><div class="c"></div></div>';
@@ -652,9 +701,10 @@
       }
       var rows = songRow + g.rows.map(function (item) {
         var o = item.o, i = item.i;
+        var itemSong = o.song === true || (typeof o.song === "string" && cleanSong(o.song) !== "");
         return '<div class="row' + (o.name === "설교" ? " sermon" : "") + '">' +
           '<div class="a">' + (o.stand ? '<span class="st">※</span>' : "") + E("ord." + i + ".name", o.name || "") + "</div>" +
-          '<div class="b">' + (o.song ? '<span class="note sym">♬</span>' : "") + E("ord." + i + ".mid", o.mid || "") + "</div>" +
+          '<div class="b">' + (itemSong ? '<span class="note sym">♬</span>' : "") + E("ord." + i + ".mid", o.mid || "") + "</div>" +
           '<div class="c">' + E("ord." + i + ".by", o.by || "") + "</div></div>";
       }).join("");
       var pill = g.o && g.o.section ? '<span class="pill"><span class="dot"></span>' + E("ord." + g.i + ".section", g.o.section) + "</span>" : "";
@@ -987,7 +1037,8 @@
     });
   }
   function saveAll() {
-    harvest();
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    settleSongs();
     var iso = dotToIso(viewJ.date);
     if (!iso) { setEditStatus("날짜를 2026년 10월 18일 처럼 적어 주세요."); return; }
     writeDraft(viewJ, viewC);
@@ -1049,8 +1100,8 @@
     });
   }
   function bookletPdf() {
-    if (editing) harvest();
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    settleSongs();
     var prev = mode;
     mode = "single";
     applyMode();
@@ -1125,7 +1176,8 @@
     });
   }
   function printAs(next) {
-    harvest();
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    settleSongs();
     mode = next;
     applyMode();
     fitWidth();
@@ -1234,6 +1286,7 @@
   window.addEventListener("resize", function () { if (editing) fitWidth(); });
   window.addEventListener("beforeprint", function () {
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    settleSongs();
     var book = document.getElementById("book");
     if (book) { book.style.transform = "none"; book.style.marginLeft = "0px"; book.style.marginBottom = "0px"; }
     sheetZoom("");
