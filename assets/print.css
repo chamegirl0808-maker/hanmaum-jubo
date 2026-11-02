@@ -329,6 +329,7 @@ body.pdf-capture .sheet {
 }
 .praise .note, .row .note { color: var(--coral); margin-right: 1mm; }
 .praise .pt, .praise .chunk { white-space: nowrap; }
+.praise .pt { font-size: 11.5pt; }
 .praise .psep {
   display: inline-block;
   width: 1.2em;
