@@ -56,11 +56,37 @@
     if (el) el.textContent = msg || "";
   }
   function $(id) { return document.getElementById(id); }
+  function ingestTokenHash() {
+    var h = location.hash || "";
+    if (h.charAt(0) === "#") h = h.slice(1);
+    if (!h) return;
+    var keep = [];
+    var touched = false;
+    h.split("&").forEach(function (part) {
+      if (!part) return;
+      var cut = part.indexOf("=");
+      var key = cut < 0 ? part : part.slice(0, cut);
+      var val = cut < 0 ? "" : part.slice(cut + 1);
+      if (key === "gh") {
+        touched = true;
+        try {
+          var token = val;
+          try { token = decodeURIComponent(token); } catch (e) {}
+          token = String(token).trim();
+          if (token) localStorage.setItem(TOKEN, token);
+        } catch (e) {}
+        return;
+      }
+      keep.push(part);
+    });
+    if (!touched) return;
+    history.replaceState(null, "", location.pathname + location.search + (keep.length ? "#" + keep.join("&") : ""));
+  }
 
   function loadScript(id) {
     return new Promise(function (resolve, reject) {
       var s = document.createElement("script");
-      s.src = "data/" + id + ".js";
+      s.src = "data/" + id + ".js?t=" + Date.now();
       s.onload = function () { resolve(clone(window.JUBO)); };
       s.onerror = function () { reject(new Error("missing")); };
       document.head.appendChild(s);
@@ -514,7 +540,7 @@
     var J = collect();
     writeDraft(iso, J);
     localStorage.setItem(PREVIEW, JSON.stringify({ week: iso, jubo: J }));
-    location.href = "print.html?draft=1";
+    location.href = "print.html?draft=1&week=" + encodeURIComponent(iso);
   });
   $("download-btn").addEventListener("click", function () {
     var iso = $("f-date").value;
@@ -552,6 +578,7 @@
     a.remove();
   }
 
+  ingestTokenHash();
   shell(weeks, currentId);
   openWeek(currentId);
 })();
