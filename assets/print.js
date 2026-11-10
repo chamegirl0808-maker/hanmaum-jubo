@@ -812,11 +812,11 @@
       '<div class="vis">' +
       (C.vision || []).map(function (v, i) {
         var photo = visionPhoto(v.title);
-        return '<div class="card v">' +
+        return '<div class="card v"><div class="vshot">' +
           (photo ? '<img class="vphoto" src="' + esc(photo) + '" alt="">' : "") +
-          '<div class="vbody"><div class="ttl">' + E("ch.vis." + i + ".title", v.title) +
-          '</div><span class="ref">(' + E("ch.vis." + i + ".verse", v.verse) + ')</span><div class="sub">' +
-          E("ch.vis." + i + ".desc", v.desc) + "</div></div></div>";
+          '<div class="vcap"><div class="ttl">' + E("ch.vis." + i + ".title", v.title) +
+          '</div><span class="ref">(' + E("ch.vis." + i + ".verse", v.verse) + ")</span></div></div>" +
+          '<div class="vbody"><div class="sub">' + E("ch.vis." + i + ".desc", v.desc) + "</div></div></div>";
       }).join("") + "</div>" +
       '<div class="meet">' +
       (C.weekday || []).map(function (w, i) {

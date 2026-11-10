@@ -277,9 +277,10 @@
       '</ul><h3 class="sub">교회 비전</h3><div class="vision">' +
       (C.vision || []).map(function (v) {
         var photo = visionPhoto(v.title);
-        return "<article>" +
+        return "<article><div class=\"vshot\">" +
           (photo ? '<img class="vphoto" src="' + esc(photo) + '" alt="">' : "") +
-          "<h3>" + t(v.title) + '</h3><p class="verse">' + t(v.verse) + "</p><p>" + t(v.desc) + "</p></article>";
+          "<div class=\"vcap\"><h3>" + t(v.title) + '</h3><p class="verse">(' + t(v.verse) + ")</p></div></div>" +
+          '<p class="vprog">' + t(v.desc) + "</p></article>";
       }).join("") +
       "</div></section>";
 
