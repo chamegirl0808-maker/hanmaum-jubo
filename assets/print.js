@@ -28,10 +28,10 @@
     else if (s.indexOf("선교") >= 0) file = "img/vision-mission.jpg";
     else if (s.indexOf("리더") >= 0) file = "img/vision-leader.jpg";
     else if (s.indexOf("동역") >= 0 || s.indexOf("평신도") >= 0) file = "img/vision-together.jpg";
-    return file ? file + "?v=20261109a" : "";
+    return file ? file + "?v=20261110a" : "";
   }
   function logoSrc(src) {
-    return String(src || "assets/logo.png").split("?")[0] + "?v=20261109a";
+    return String(src || "assets/logo.png").split("?")[0] + "?v=20261110a";
   }
   function esc(v) {
     return String(v == null ? "" : v).replace(/[&<>"]/g, function (c) {
