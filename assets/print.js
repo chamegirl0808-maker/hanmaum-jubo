@@ -21,6 +21,15 @@
     document.body.classList.add("editing");
   }
 
+  function visionPhoto(title) {
+    var s = String(title || "");
+    var file = "";
+    if (s.indexOf("예배") >= 0) file = "img/vision-worship.jpg";
+    else if (s.indexOf("선교") >= 0) file = "img/vision-mission.jpg";
+    else if (s.indexOf("리더") >= 0) file = "img/vision-leader.jpg";
+    else if (s.indexOf("동역") >= 0 || s.indexOf("평신도") >= 0) file = "img/vision-together.jpg";
+    return file ? file + "?v=20261109a" : "";
+  }
   function logoSrc(src) {
     return String(src || "assets/logo.png").split("?")[0] + "?v=20261109a";
   }
@@ -802,9 +811,12 @@
       '<div class="pagehead"><div><h1>' + E("ch.name", C.name) + "는</h1></div></div>" +
       '<div class="vis">' +
       (C.vision || []).map(function (v, i) {
-        return '<div class="card v"><div class="ttl"><span class="ast">*</span>' + E("ch.vis." + i + ".title", v.title) +
+        var photo = visionPhoto(v.title);
+        return '<div class="card v">' +
+          (photo ? '<img class="vphoto" src="' + esc(photo) + '" alt="">' : "") +
+          '<div class="vbody"><div class="ttl">' + E("ch.vis." + i + ".title", v.title) +
           '</div><span class="ref">(' + E("ch.vis." + i + ".verse", v.verse) + ')</span><div class="sub">' +
-          E("ch.vis." + i + ".desc", v.desc) + "</div></div>";
+          E("ch.vis." + i + ".desc", v.desc) + "</div></div></div>";
       }).join("") + "</div>" +
       '<div class="meet">' +
       (C.weekday || []).map(function (w, i) {

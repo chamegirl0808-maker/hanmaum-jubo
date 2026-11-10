@@ -17,6 +17,15 @@
   };
   document.head.appendChild(s);
 
+  function visionPhoto(title) {
+    var s = String(title || "");
+    var file = "";
+    if (s.indexOf("예배") >= 0) file = "img/vision-worship.jpg";
+    else if (s.indexOf("선교") >= 0) file = "img/vision-mission.jpg";
+    else if (s.indexOf("리더") >= 0) file = "img/vision-leader.jpg";
+    else if (s.indexOf("동역") >= 0 || s.indexOf("평신도") >= 0) file = "img/vision-together.jpg";
+    return file ? file + "?v=20261109a" : "";
+  }
   function logoSrc(src) {
     return String(src || "assets/logo.png").split("?")[0] + "?v=20261109a";
   }
@@ -267,7 +276,10 @@
       }).join("") +
       '</ul><h3 class="sub">교회 비전</h3><div class="vision">' +
       (C.vision || []).map(function (v) {
-        return "<article><h3>" + t(v.title) + '</h3><p class="verse">' + t(v.verse) + "</p><p>" + t(v.desc) + "</p></article>";
+        var photo = visionPhoto(v.title);
+        return "<article>" +
+          (photo ? '<img class="vphoto" src="' + esc(photo) + '" alt="">' : "") +
+          "<h3>" + t(v.title) + '</h3><p class="verse">' + t(v.verse) + "</p><p>" + t(v.desc) + "</p></article>";
       }).join("") +
       "</div></section>";
 
