@@ -28,10 +28,10 @@
     else if (s.indexOf("선교") >= 0) file = "img/vision-mission.jpg";
     else if (s.indexOf("리더") >= 0) file = "img/vision-leader.jpg";
     else if (s.indexOf("동역") >= 0 || s.indexOf("평신도") >= 0) file = "img/vision-together.jpg";
-    return file ? file + "?v=20261110a" : "";
+    return file ? file + "?v=20261116a" : "";
   }
   function logoSrc(src) {
-    return String(src || "assets/logo.png").split("?")[0] + "?v=20261110a";
+    return String(src || "assets/logo.png").split("?")[0] + "?v=20261116a";
   }
   function esc(v) {
     return String(v == null ? "" : v).replace(/[&<>"]/g, function (c) {
@@ -959,13 +959,27 @@
     delete copy.직분;
     return copy;
   }
+  function dataOnly(value) {
+    var drop = { html: 1, layout: 1, markup: 1, css: 1, template: 1, style: 1 };
+    if (Array.isArray(value)) return value.map(dataOnly);
+    if (!value || typeof value !== "object") {
+      if (typeof value === "string") return value.replace(/<\s*\/?\s*(div|section|span|style|html|img|link|script)\b[^>]*>/gi, "");
+      return value;
+    }
+    var out = {};
+    for (var k in value) {
+      if (!Object.prototype.hasOwnProperty.call(value, k) || drop[k]) continue;
+      out[k] = dataOnly(value[k]);
+    }
+    return out;
+  }
   function weekFile(J) {
-    J = withoutRoleMap(J);
+    J = dataOnly(withoutRoleMap(J));
     return "// ===== " + (J.date || "") + " (" + (J.issue || "") + ") 주보 데이터 =====\n" +
       "window.JUBO = " + JSON.stringify(J, null, 2) + ";\n";
   }
   function churchFile(C) {
-    C = withoutRoleMap(C);
+    C = dataOnly(withoutRoleMap(C));
     return "// 교회 고정 정보 (자주 바뀌지 않는 내용)\nwindow.CHURCH = " + JSON.stringify(C, null, 2) + ";\n";
   }
   function currentFile(id) {
@@ -1016,6 +1030,7 @@
     return "저장하지 못했습니다. 잠시 후 다시 눌러 주세요.";
   }
   function ghPut(path, text, message, token) {
+    if (!/^data\/[A-Za-z0-9._-]+\.js$/.test(path)) return Promise.reject(new Error("data only"));
     var url = "https://api.github.com/repos/" + REPO + "/contents/" + path;
     var headers = {
       "Authorization": "Bearer " + token,
@@ -1351,7 +1366,7 @@
     render(window.CHURCH, J, week);
   }
   var s = document.createElement("script");
-  s.src = "data/" + week + ".js?t=" + Date.now();
+  s.src = "data/" + week + ".js?v=20261116a&t=" + Date.now();
   s.onload = function () { showLoaded(window.JUBO); };
   s.onerror = function () {
     var draft = editing ? drafts()[week] : null;

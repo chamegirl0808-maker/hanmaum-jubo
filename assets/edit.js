@@ -86,7 +86,7 @@
   function loadScript(id) {
     return new Promise(function (resolve, reject) {
       var s = document.createElement("script");
-      s.src = "data/" + id + ".js?t=" + Date.now();
+      s.src = "data/" + id + ".js?v=20261116a&t=" + Date.now();
       s.onload = function () { resolve(clone(window.JUBO)); };
       s.onerror = function () { reject(new Error("missing")); };
       document.head.appendChild(s);
@@ -227,7 +227,22 @@
     return J;
   }
 
+  function dataOnly(value) {
+    var drop = { html: 1, layout: 1, markup: 1, css: 1, template: 1, style: 1 };
+    if (Array.isArray(value)) return value.map(dataOnly);
+    if (!value || typeof value !== "object") {
+      if (typeof value === "string") return value.replace(/<\s*\/?\s*(div|section|span|style|html|img|link|script)\b[^>]*>/gi, "");
+      return value;
+    }
+    var out = {};
+    for (var k in value) {
+      if (!Object.prototype.hasOwnProperty.call(value, k) || drop[k]) continue;
+      out[k] = dataOnly(value[k]);
+    }
+    return out;
+  }
   function weekFile(J) {
+    J = dataOnly(J);
     var comment = "// ===== " + (J.date || "") + " (" + (J.issue || "") + ") 주보 데이터 =====\n";
     return comment + "window.JUBO = " + JSON.stringify(J, null, 2) + ";\n";
   }
@@ -512,6 +527,7 @@
     return "저장하지 못했습니다. 잠시 후 다시 눌러 주세요.";
   }
   function ghPut(path, text, message, token) {
+    if (!/^data\/[A-Za-z0-9._-]+\.js$/.test(path)) return Promise.reject(new Error("data only"));
     var url = "https://api.github.com/repos/" + REPO + "/contents/" + path;
     var headers = {
       "Authorization": "Bearer " + token,

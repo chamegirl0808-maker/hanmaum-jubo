@@ -10,9 +10,25 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;600;700;800;900&display=swap">
-<link rel="icon" href="assets/logo.png?v=20261110a">
-<link rel="apple-touch-icon" href="assets/logo.png?v=20261110a">
-<link rel="stylesheet" href="assets/style.css?v=20261110a">
+<link rel="icon" href="assets/logo.png?v=20261116a">
+<link rel="apple-touch-icon" href="assets/logo.png?v=20261116a">
+<script>
+(function () {
+  var v = "20261116a";
+  var t = Date.now();
+  document.write('<link rel="stylesheet" href="assets/style.css?v=' + v + "&t=" + t + '">');
+  if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+    navigator.serviceWorker.getRegistrations().then(function (list) {
+      for (var i = 0; i < list.length; i++) list[i].unregister();
+    });
+  }
+  if (window.caches && caches.keys) {
+    caches.keys().then(function (keys) {
+      for (var i = 0; i < keys.length; i++) caches.delete(keys[i]);
+    });
+  }
+})();
+</script>
 </head>
 <body>
 <header class="topbar no-print">
@@ -24,12 +40,12 @@
 <main class="wrap" id="jubo"></main>
 <script>
 (function () {
+  var v = "20261116a";
   var t = Date.now();
-  ["data/church.js", "data/current.js"].forEach(function (src) {
-    document.write('<script src="' + src + "?t=" + t + '"><\/script>');
+  ["data/church.js", "data/current.js", "assets/app.js"].forEach(function (src) {
+    document.write('<script src="' + src + "?v=" + v + "&t=" + t + '"><\/script>');
   });
 })();
 </script>
-<script src="assets/app.js?v=20261110a"></script>
 </body>
 </html>

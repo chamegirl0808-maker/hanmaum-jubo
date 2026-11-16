@@ -10,7 +10,7 @@
   }
 
   var s = document.createElement("script");
-  s.src = "data/" + week + ".js?t=" + Date.now();
+  s.src = "data/" + week + ".js?v=20261116a&t=" + Date.now();
   s.onload = function () { render(window.CHURCH, window.JUBO, week); };
   s.onerror = function () {
     document.getElementById("jubo").innerHTML = '<p class="err">' + week + " 주보 파일을 찾을 수 없습니다.</p>";
@@ -24,10 +24,10 @@
     else if (s.indexOf("선교") >= 0) file = "img/vision-mission.jpg";
     else if (s.indexOf("리더") >= 0) file = "img/vision-leader.jpg";
     else if (s.indexOf("동역") >= 0 || s.indexOf("평신도") >= 0) file = "img/vision-together.jpg";
-    return file ? file + "?v=20261110a" : "";
+    return file ? file + "?v=20261116a" : "";
   }
   function logoSrc(src) {
-    return String(src || "assets/logo.png").split("?")[0] + "?v=20261110a";
+    return String(src || "assets/logo.png").split("?")[0] + "?v=20261116a";
   }
   function esc(t) {
     return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) {
